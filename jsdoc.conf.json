@@ -1,0 +1,17 @@
+{
+	"source" : {
+		"include": ["./lib/databridgeCaching.js"]
+	},
+	"opts" : {
+		"destination" : "./docs",
+		"template": "./node_modules/@bbusschots/minami-bartificer",
+		"readme": "./README.md"
+	},
+	"templates" : {
+		"default" : {
+			"outputSourceFiles" : false,
+            "useLongnameInNav": false
+		}
+	},
+    "plugins": ["plugins/markdown"]
+}

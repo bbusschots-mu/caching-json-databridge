@@ -1,8 +1,8 @@
 {
-  "name": "@maynoothuniversity/databridge-caching",
+  "name": "@maynoothuniversity/caching-json-databridge",
   "version": "0.0.1",
   "description": "A caching data bridge for NodeJS",
-  "main": "lib/databridgeCaching.js",
+  "main": "lib/cjdb.js",
   "scripts": {
     "test": "node_modules/qunitjs/bin/qunit test/test.js",
     "generate-docs": "node_modules/.bin/jsdoc --configure jsdoc.conf.json",
@@ -10,14 +10,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bbusschots-mu/databridge-caching.git"
+    "url": "git+https://github.com/bbusschots-mu/caching-json-databridge.git"
   },
   "author": "Bart Busschots <bart.busschots@mu.ie>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/bbusschots-mu/databridge-caching/issues"
+    "url": "https://github.com/bbusschots-mu/caching-json-databridge/issues"
   },
-  "homepage": "https://github.com/bbusschots-mu/databridge-caching#readme",
+  "homepage": "https://github.com/bbusschots-mu/caching-json-databridge#readme",
   "devDependencies": {
     "@bbusschots/minami-bartificer": "^1.2.3",
     "jsdoc": "^3.5.3",

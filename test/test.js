@@ -3,7 +3,7 @@
 //
 
 // import the module under test
-const CachingDatabridge = require('../');
+const Databridge = require('../');
 
 // import validateParams for access to the error prototype
 const validateParams = require('@maynoothuniversity/validate-params');
@@ -146,5 +146,5 @@ function dummyBasicTypesExcept(){
 //
 
 QUnit.test('class exists', function(a){
-    a.equal(typeof CachingDatabridge, 'function');
+    a.equal(typeof Databridge, 'function');
 });

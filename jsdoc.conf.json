@@ -1,6 +1,6 @@
 {
 	"source" : {
-		"include": ["./lib/databridgeCaching.js"]
+		"include": ["./lib/cjdb.js"]
 	},
 	"opts" : {
 		"destination" : "./docs",

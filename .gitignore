@@ -4,5 +4,8 @@ node_modules/
 # the developer docs
 docs-dev/
 
+# test data
+databridgeJsonCache/
+
 # IDE Files
 *.komodoproject

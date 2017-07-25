@@ -5,9 +5,27 @@
 // import the module under test
 const Databridge = require('../');
 
-// import validateParams for access to the error prototype
+// import validateParams for access to the error prototype and other utilities
 const validateParams = require('@maynoothuniversity/validate-params');
 const validate = validateParams.validateJS();
+
+// import file system support - use fs-extra to avoid adding extra dependencies
+const fs = require('fs-extra');
+
+//
+//=== Test Suite Setup =========================================================
+//
+
+/**
+ * The path to the dummy cache dir used during testing
+ */
+const CACHEDIR = './databridgeJsonCache';
+
+// add an event handler to empty the cache dir each time the test suite runs
+QUnit.begin(function(){
+    fs.emptyDirSync(CACHEDIR);
+});
+
 
 //
 //=== Utility Variables & Functions ============================================
@@ -145,6 +163,71 @@ function dummyBasicTypesExcept(){
 //=== Define Tests =============================================================
 //
 
-QUnit.test('class exists', function(a){
-    a.equal(typeof Databridge, 'function');
+QUnit.module('The Databridge class', {}, function(){
+    QUnit.test('class exists', function(a){
+        a.equal(typeof Databridge, 'function');
+    });
+    
+    QUnit.module('constructor', {}, function(){
+        QUnit.test('building default object', function(a){
+            a.expect(3);
+            var db = new Databridge();
+            a.ok(db instanceof Databridge, 'object successfully constructed without args');
+            a.strictEqual(db._options.cacheDir, CACHEDIR, 'cache dir defaulted to expected value');
+            a.strictEqual(db._options.defaultCacheTTL, 3600, 'default cache TTL defaulted to expected value');
+        });
+        
+        QUnit.test('specified options correctly stored', function(a){
+            a.expect(2);
+            var testPath = './';
+            var testTTL = 300;
+            var db = new Databridge({cacheDir: testPath, defaultCacheTTL: testTTL});
+            a.strictEqual(db._options.cacheDir, testPath, 'cache dir correctly stored');
+            a.strictEqual(db._options.defaultCacheTTL, testTTL, 'default cache TTL correctly stored');
+        });
+    });
+});
+
+QUnit.module('The Databridge.Datasource class', {}, function(){
+    QUnit.test('class exists', function(a){
+        a.equal(typeof Databridge.Datasource, 'function');
+    });
+    
+    QUnit.module('constructor', {}, function(){
+        QUnit.test('required arguments & defaults', function(a){
+            a.expect(6);
+            a.throws(
+                function(){
+                    new Databridge.Datasource();
+                },
+                validateParams.ValidationError,
+                'throws error when no arguments are passed'
+            );
+            a.throws(
+                function(){
+                    new Databridge.Datasource('test');
+                },
+                validateParams.ValidationError,
+                'throws error when only a name is passed'
+            );
+            var defDS = new Databridge.Datasource('test', function(){});
+            a.ok(defDS, 'no error thrown when passed both a name and a callback but no options');
+            a.strictEqual(defDS._options.enableCaching, true, 'caching enabled by default');
+            a.strictEqual(typeof defDS._options.cacheTTL, 'undefined', 'no custom cache TTL set by default');
+            a.ok(new Databridge.Datasource('test', function(){}, {cacheTTL: 300}), 'no error thrown when passed both a name, a callback, and options');
+        });
+        
+        QUnit.test('data correctly stored', function(a){
+            a.expect(4);
+            var testName = 'test';
+            var testFn = function(){ return true; };
+            var testTTL = 500;
+            var testCacheEnable = false;
+            var ds = new Databridge.Datasource(testName, testFn, {cacheTTL: testTTL, enableCaching: testCacheEnable});
+            a.strictEqual(ds._name, testName, 'name successfully stored');
+            a.strictEqual(ds._dataFetcher, testFn, 'data fether callback successfully stored');
+            a.strictEqual(ds._options.enableCaching, testCacheEnable, 'cache enabling option successfully stored');
+            a.strictEqual(ds._options.cacheTTL, testTTL, 'cache TTL option successfully stored');
+        });
+    });
 });

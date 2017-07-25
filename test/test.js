@@ -78,14 +78,6 @@ QUnit.testStart(function() {
         fn: {
             desc: 'a function object',
             val: function(a,b){ return a + b; }
-        },
-        url: {
-            desc: 'an HTTPS URL',
-            val: 'https://localhost/'
-        },
-        token: {
-            desc: 'a Moodle Webservice token',
-            val: '00000000000000000000000000000000'
         }
     };
     DUMMY_BASIC_TYPES = {

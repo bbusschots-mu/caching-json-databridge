@@ -185,7 +185,79 @@ QUnit.module('The Databridge class', {}, function(){
             a.strictEqual(db._options.cacheDir, testPath, 'cache dir correctly stored');
             a.strictEqual(db._options.defaultCacheTTL, testTTL, 'default cache TTL correctly stored');
         });
+        
+        QUnit.test('._datasources correctly initialised', function(a){
+            a.expect(1);
+            var db = new Databridge();
+            a.deepEqual(db._datasources, {});
+        });
     });
+    
+    QUnit.module('.option() read-only accessor',
+        {
+            beforeEach: function(){
+                this.db = new Databridge({ cacheDir: './', defaultCacheTTL: 500 });
+            }
+        },
+        function(){
+            QUnit.test('function exists', function(a){
+                a.ok(validate.isFunction(this.db.option));
+            });
+            
+            QUnit.test('defined option returns as expected', function(a){
+                a.strictEqual(this.db.option('defaultCacheTTL'), 500);
+            });
+            
+            QUnit.test('non-existent option returns undefined', function(a){
+                a.strictEqual(typeof this.db.option('thingy'), 'undefined');
+            });
+        }
+    );
+    
+    QUnit.module(
+        '.registerDatasource() instance method',
+        {
+            beforeEach: function(){
+                this.db = new Databridge({ cacheDir: './' });
+                this.ds = new Databridge.Datasource('testDS', function(){ return true; });
+            }
+        },
+        function(){
+            QUnit.test('function exists', function(a){
+                a.equal(typeof this.db.registerDatasource, 'function');
+            });
+            
+            QUnit.test('name clashes prevented', function(a){
+                a.expect(2);
+                this.db.registerDatasource(this.ds);
+                a.throws(
+                    function(){
+                        this.db.registerDatasource(new Databridge.Datasource('testDS', function(){}));
+                    },
+                    Error,
+                    'clashing datasource name rejected'
+                );
+                a.throws(
+                    function(){
+                        this.db.registerDatasource(new Databridge.Datasource('option', function(){}));
+                    },
+                    Error,
+                    'datasource name that clashes with instance method name rejected'
+                );
+            });
+            
+            QUnit.test('function chanining supported', function(a){
+                a.strictEqual(this.db.registerDatasource(this.ds), this.db);
+            });
+            
+            QUnit.test('source correctly registered', function(a){
+                a.expect(1);
+                this.db.registerDatasource(this.ds);
+                a.strictEqual(this.db._datasources[this.ds.name()], this.ds, 'datasource saved in ._datasources property with correct name');
+                // TO DO - check the bound shortcut when support is added for that later
+            });
+        }
+    );
 });
 
 QUnit.module('The Databridge.Datasource class', {}, function(){
@@ -230,4 +302,41 @@ QUnit.module('The Databridge.Datasource class', {}, function(){
             a.strictEqual(ds._options.cacheTTL, testTTL, 'cache TTL option successfully stored');
         });
     });
+    
+    QUnit.module(
+        'read-only accessors',
+        {
+            beforeEach: function(){
+                this.df = function(){ return true; };
+                this.ds = new Databridge.Datasource('test', this.df, { enableCaching: true, cacheTTL: 300 });
+            }
+        },
+        function(){
+            QUnit.test('.name() exists', function(a){
+                a.ok(validate.isFunction(this.ds.name));
+            });
+            
+            QUnit.test('.name() returns expected value', function(a){
+                a.strictEqual(this.ds.name(), 'test');
+            });
+            
+            QUnit.test('.dataFetcher() exists', function(a){
+                a.ok(validate.isFunction(this.ds.dataFetcher));
+            });
+            
+            QUnit.test('.dataFetcher() returns expected value', function(a){
+                a.strictEqual(this.ds.dataFetcher(), this.df);
+            });
+            
+            QUnit.test('.option() exists', function(a){
+                a.ok(validate.isFunction(this.ds.option));
+            });
+            
+            QUnit.test('.option() returns expected values', function(a){
+                a.expect(2);
+                a.strictEqual(this.ds.option('cacheTTL'), 300, 'expected value returned for defined option');
+                a.strictEqual(typeof this.ds.option('thingy'), 'undefined', 'undefined returned for un-specified option');
+            });
+        }
+    );
 });

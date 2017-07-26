@@ -33,7 +33,7 @@ QUnit.begin(function(){
 
 /**
  * An object containing dummy data. The pieces of dummy data are indexed by
- * names, and each peice of dummy data is itself an object indexed by `desc` (a
+ * names, and each piece of dummy data is itself an object indexed by `desc` (a
  * description) and `val` (the dummy value).
  *
  * This object is re-built before each test
@@ -132,10 +132,10 @@ function dummyDesc(typeName){
 }
 
 /**
- * A function to return the names of all dummy asic types not explicitly
+ * A function to return the names of all dummy basic types not explicitly
  * excluded.
  *
- * @param {...string} typeName - the names of the types to exclide from the
+ * @param {...string} typeName - the names of the types to exclude from the
  * returned list.
  * @returns Array.<string> the names of all the dummy basic types except those
  * excluded by the passed arguments as an array of strings.

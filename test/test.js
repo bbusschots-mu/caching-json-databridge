@@ -278,10 +278,10 @@ QUnit.module('The Databridge class', {}, function(){
             });
             
             QUnit.test('source correctly registered & fetched', function(a){
-                a.expect(2);
+                a.expect(3);
                 this.db.registerDatasource(this.ds);
                 a.strictEqual(this.db._datasources[this.ds.name()], this.ds, 'datasource saved in ._datasources property with correct name');
-                // TO DO - check the bound shortcut when support is added for that later
+                a.strictEqual(typeof this.db[this.ds.name()], 'function', 'shortcut function added for datasource');
                 a.strictEqual(this.db.datasource(this.ds.name()), this.ds, 'datasource retrieved with .datasource() accessor');
             });
             
@@ -294,6 +294,29 @@ QUnit.module('The Databridge class', {}, function(){
             });
         }
     );
+    
+    QUnit.module('data fetching and caching', {}, function(){
+        QUnit.test('fetch instance methods exist', function(a){
+            a.expect(2);
+            var db = new Databridge();
+            a.ok(validate.isFunction(db.fetchDataPromise), '.fetchDataPromise() exists');
+            a.strictEqual(db.fetch, db.fetchDataPromise, '.fetch() is an alias to .fetchDataPromise()');
+        });
+        
+        QUnit.test('fetch data from un-cached immediately returning data source', function(a){
+            a.expect(1);
+            var db = new Databridge();
+            var dummyData = { a: 'b' };
+            db.registerDatasource(new Databridge.Datasource(
+                'testSource',
+                function(){ return dummyData; },
+                { enableCaching : false }
+            ));
+            return db.testSource().then(function(data){
+                a.deepEqual(data, dummyData);
+            });
+        });
+    });
 });
 
 QUnit.module('The Databridge.Datasource class', {}, function(){

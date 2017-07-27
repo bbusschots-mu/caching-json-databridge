@@ -163,6 +163,31 @@ function dummyBasicTypesExcept(){
 //=== Define Tests =============================================================
 //
 
+QUnit.module('custom validators', {}, function(){
+    QUnit.test('custom validators registered', function(a){
+        a.expect(2);
+        a.strictEqual(typeof validate.validators.folderExists, 'function', 'folderExists is registered');
+        a.strictEqual(typeof validate.validators.iso8601, 'function', 'iso8601 is registered');
+    });
+    
+    QUnit.test('the folderExists validator', function(a){
+        a.expect(4);
+        a.strictEqual(typeof validate.validators.folderExists(undefined, true), 'undefined', 'undefined passes');
+        a.ok(!validate.isDefined(validate.validators.folderExists('./lib', true)), 'existing folder passes');
+        a.ok(validate.isString(validate.validators.folderExists('/thingys', true)), 'non-existing path returns error message');
+        a.ok(validate.isString(validate.validators.folderExists('./package.jason', true)), 'path to file returns error message');
+    });
+    
+    QUnit.test('the iso8601 validator', function(a){
+        a.expect(5);
+        a.strictEqual(typeof validate.validators.iso8601(undefined, true), 'undefined', 'undefined passes');
+        a.strictEqual(typeof validate.validators.iso8601('', true), 'undefined', 'empty string passes');
+        a.ok(!validate.isDefined(validate.validators.iso8601('2017-07-27T10:28:53', true)), 'valid date passes');
+        a.ok(validate.isString(validate.validators.iso8601('thingys', true)), 'invalid date return error message');
+        a.ok(validate.isString(validate.validators.iso8601(42, true)), 'non-string returns error message');
+    });
+});
+
 QUnit.module('The Databridge class', {}, function(){
     QUnit.test('class exists', function(a){
         a.equal(typeof Databridge, 'function');
@@ -215,7 +240,7 @@ QUnit.module('The Databridge class', {}, function(){
     );
     
     QUnit.module(
-        '.registerDatasource() instance method',
+        '.registerDatasource() & .datasource() instance methods',
         {
             beforeEach: function(){
                 this.db = new Databridge({ cacheDir: './' });
@@ -223,11 +248,13 @@ QUnit.module('The Databridge class', {}, function(){
             }
         },
         function(){
-            QUnit.test('function exists', function(a){
-                a.equal(typeof this.db.registerDatasource, 'function');
+            QUnit.test('methods exist', function(a){
+                a.expect(2);
+                a.equal(typeof this.db.registerDatasource, 'function', '.registerDatasource() exists');
+                a.equal(typeof this.db.datasource, 'function', '.datasource() exists');
             });
             
-            QUnit.test('name clashes prevented', function(a){
+            QUnit.test('name clashes prevented on registration', function(a){
                 a.expect(2);
                 this.db.registerDatasource(this.ds);
                 a.throws(
@@ -246,15 +273,24 @@ QUnit.module('The Databridge class', {}, function(){
                 );
             });
             
-            QUnit.test('function chanining supported', function(a){
+            QUnit.test('function chanining supported by registration function', function(a){
                 a.strictEqual(this.db.registerDatasource(this.ds), this.db);
             });
             
-            QUnit.test('source correctly registered', function(a){
-                a.expect(1);
+            QUnit.test('source correctly registered & fetched', function(a){
+                a.expect(2);
                 this.db.registerDatasource(this.ds);
                 a.strictEqual(this.db._datasources[this.ds.name()], this.ds, 'datasource saved in ._datasources property with correct name');
                 // TO DO - check the bound shortcut when support is added for that later
+                a.strictEqual(this.db.datasource(this.ds.name()), this.ds, 'datasource retrieved with .datasource() accessor');
+            });
+            
+            QUnit.test('.datasource() returns undefined for unregistered sources', function(a){
+                a.strictEqual(typeof this.db.datasource('thingys'), 'undefined');
+            });
+            
+            QUnit.test('.source() is a shortcut to .datasource()', function(a){
+                a.strictEqual(this.db.source, this.db.datasource);
             });
         }
     );

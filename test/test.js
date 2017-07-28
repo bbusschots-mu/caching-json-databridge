@@ -12,6 +12,9 @@ const validate = validateParams.validateJS();
 // import file system support - use fs-extra to avoid adding extra dependencies
 const fs = require('fs-extra');
 
+// import time handling support - needed for testing timestamps
+const moment = require('moment');
+
 //
 //=== Test Suite Setup =========================================================
 //
@@ -395,6 +398,120 @@ QUnit.module('The Databridge.Datasource class', {}, function(){
                 a.expect(2);
                 a.strictEqual(this.ds.option('cacheTTL'), 300, 'expected value returned for defined option');
                 a.strictEqual(typeof this.ds.option('thingy'), 'undefined', 'undefined returned for un-specified option');
+            });
+        }
+    );
+});
+
+QUnit.module('The Databridge.FetchRequest class', {}, function(){
+    QUnit.test('class exists', function(a){
+        a.equal(typeof Databridge.FetchRequest, 'function');
+    });
+    
+    QUnit.module('constructor', {}, function(){
+        QUnit.test('required arguments', function(a){
+            a.expect(6);
+            var db = new Databridge();
+            var ds = new Databridge.Datasource('testDS', function(){ return true; });
+            a.throws(
+                function(){
+                    new Databridge.FetchRequest();
+                },
+                validateParams.ValidationError,
+                'throws error when no arguments are passed'
+            );
+            a.throws(
+                function(){
+                    new Databridge.FetchRequest(db);
+                },
+                validateParams.ValidationError,
+                'throws error when only a bridge is passed'
+            );
+            a.throws(
+                function(){
+                    new Databridge.FetchRequest(db, ds);
+                },
+                validateParams.ValidationError,
+                'throws error when only a bridge and source are passed'
+            );
+            a.throws(
+                function(){
+                    new Databridge.FetchRequest(db, ds, {});
+                },
+                validateParams.ValidationError,
+                'throws error when only a bridge, source, and options are passed'
+            );
+            a.throws(
+                function(){
+                    new Databridge.FetchRequest(db, ds, {}, []);
+                },
+                validateParams.ValidationError,
+                'throws error when only a bridge, source, options, and params are passed'
+            );
+            a.ok(new Databridge.FetchRequest(db, ds, {}, [], moment().toISOString()), 'no error thrown when passed all params');
+        });
+        
+        QUnit.test('data correctly stored', function(a){
+            a.expect(5);
+            var db = new Databridge();
+            var ds = new Databridge.Datasource('testDS', function(){ return true; });
+            var opts = { enableCaching: true };
+            var params = [true];
+            var ts = moment().toISOString();
+            var fr = new Databridge.FetchRequest(db, ds, opts, params, ts);
+            a.strictEqual(fr._bridge, db, 'databridge successfully stored');
+            a.strictEqual(fr._source, ds, 'datasource successfully stored');
+            a.strictEqual(fr._fetchOptions, opts, 'fetch options successfully stored');
+            a.strictEqual(fr._fetcherParams, params, 'fetcher parans successfully stored');
+            a.strictEqual(fr._timestamp, ts, 'timestamp successfully stored');
+        });
+    });
+    
+    QUnit.module(
+        'read-only accessors',
+        {
+            beforeEach: function(){
+                this.db = new Databridge;
+                this.ds = new Databridge.Datasource('test', function(){ return true; });
+                this.opts = { cacheTTL: 300 };
+                this.params = [true];
+                this.ts = moment().toISOString();
+                this.fr = new Databridge.FetchRequest(this.db, this.ds, this.opts, this.params, this.ts);
+            }
+        },
+        function(){
+            QUnit.test('.databridge() & .bridge()', function(a){
+                a.expect(3);
+                a.ok(validate.isFunction(this.fr.databridge), '.databridge() exists');
+                a.strictEqual(this.fr.databridge(), this.db, 'returns expected value');
+                a.strictEqual(this.fr.databridge, this.fr.bridge, '.bridge() is alias for .databridge()');
+            });
+            
+            QUnit.test('.datasource() & .source()', function(a){
+                a.expect(3);
+                a.ok(validate.isFunction(this.fr.datasource), '.datasource() exists');
+                a.strictEqual(this.fr.datasource(), this.ds, 'returns expected value');
+                a.strictEqual(this.fr.datasource, this.fr.source, '.source() is alias for .datasource()');
+            });
+            
+            QUnit.test('.fetchOptions() & .options()', function(a){
+                a.expect(3);
+                a.ok(validate.isFunction(this.fr.fetchOptions), '.fetchOptions() exists');
+                a.strictEqual(this.fr.fetchOptions(), this.opts, 'returns expected value');
+                a.strictEqual(this.fr.fetchOptions, this.fr.options, '.options() is alias for .fetchOptions()');
+            });
+            
+            QUnit.test('.fetcherParams() & .params()', function(a){
+                a.expect(3);
+                a.ok(validate.isFunction(this.fr.fetcherParams), '.fetcherParams() exists');
+                a.strictEqual(this.fr.fetcherParams(), this.params, 'returns expected value');
+                a.strictEqual(this.fr.fetcherParams, this.fr.params, '.params() is alias for .fetcherParams()');
+            });
+            
+            QUnit.test('.timestamp()', function(a){
+                a.expect(2);
+                a.ok(validate.isFunction(this.fr.timestamp), '.timestamp() exists');
+                a.strictEqual(this.fr.timestamp(), this.ts, 'returns expected value');
             });
         }
     );

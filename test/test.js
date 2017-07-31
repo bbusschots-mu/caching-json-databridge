@@ -306,30 +306,50 @@ QUnit.module('The Databridge class', {}, function(){
         }
     );
     
-    QUnit.module('data fetching and caching', {}, function(){
-        QUnit.test('fetch instance methods exist', function(a){
-            a.expect(3);
-            var db = new Databridge();
-            a.ok(validate.isFunction(db.fetchResponse), '.fetchResponse() exists');
-            a.ok(validate.isFunction(db.fetchDataPromise), '.fetchDataPromise() exists');
-            a.strictEqual(db.fetch, db.fetchResponse, '.fetch() is an alias to .fetchResponse()');
-        });
+    QUnit.module('data fetching and caching',
+        {
+            beforeEach: function(){
+                this.db = new Databridge();
+                let dummyData = ['thingys', 'whatsitis'];
+                this.dummyData = dummyData;
+                this.dsName = 'testDS';
+                this.ds = new Databridge.Datasource(this.dsName, function(){ return dummyData; });
+                this.db.registerDatasource(this.ds);
+            }
+        },
+        function(){
+            QUnit.test('fetch instance methods exist', function(a){
+                a.expect(3);
+                var db = new Databridge();
+                a.ok(validate.isFunction(db.fetchResponse), '.fetchResponse() exists');
+                a.ok(validate.isFunction(db.fetchDataPromise), '.fetchDataPromise() exists');
+                a.strictEqual(db.fetch, db.fetchResponse, '.fetch() is an alias to .fetchResponse()');
+            });
         
-        //QUnit.todo('fetch data from un-cached immediately returning data source', function(a){
-        //    a.ok(true);
-        //    //a.expect(1);
-        //    //var db = new Databridge();
-        //    //var dummyData = { a: 'b' };
-        //    //db.registerDatasource(new Databridge.Datasource(
-        //    //    'testSource',
-        //    //    function(){ return dummyData; },
-        //    //    { enableCaching : false }
-        //    //));
-        //    //return db.testSource().then(function(data){
-        //    //    a.deepEqual(data, dummyData);
-        //    //});
-        //});
-    });
+            QUnit.test('fetch result object from un-cached immediately returning data source', function(a){
+                a.expect(2);
+                
+                var dummyData = this.dummyData;
+                var done = a.async();
+                var fr = this.db.fetchResponse(this.dsName, {}, []);
+                a.ok(validate.isPromise(fr.dataPromise()), 'data promise returned as part of response');
+                if(validate.isPromise(fr.dataPromise())){
+                    fr.dataPromise().then(
+                        function(d){
+                            a.deepEqual(d, dummyData, 'data promise resolves to expected value');
+                            done();
+                        },
+                        function(err){
+                            console.error('data promise rejected with error', err);
+                            done();
+                        }
+                    );
+                }else{
+                    done();
+                }
+            });
+        }
+    );
 });
 
 QUnit.module('The Databridge.Datasource class', {}, function(){
@@ -411,6 +431,25 @@ QUnit.module('The Databridge.Datasource class', {}, function(){
             });
         }
     );
+    
+    QUnit.test('data fetching', function(a){
+        a.expect(1);
+        
+        //var db = new Databridge();
+        var dummyData = { a: 'b', c: 'd' };
+        var ds = new Databridge.Datasource('testDS', function(){ return dummyData; });
+        var done = a.async();
+        var dp = ds.fetchDataPromise();
+        dp.then(
+            function(d){
+                a.deepEqual(d, dummyData, 'promise resolved to expected value');
+                done();
+            },
+            function(){
+                done();
+            }
+        );
+    });
 });
 
 QUnit.module('The Databridge.FetchRequest class', {}, function(){

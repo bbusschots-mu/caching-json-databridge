@@ -11,6 +11,7 @@ const validate = validateParams.validateJS();
 
 // import file system support - use fs-extra to avoid adding extra dependencies
 const fs = require('fs-extra');
+const path = require('path');
 
 // import time handling support - needed for testing timestamps
 const moment = require('moment');
@@ -22,11 +23,13 @@ const moment = require('moment');
 /**
  * The path to the dummy cache dir used during testing
  */
-const CACHEDIR = './databridgeJsonCache';
+const CACHEDIR_NAME = 'databridgeJsonCache';
+const CACHEDIR_RELATIVE = path.join('.', CACHEDIR_NAME);
+const CACHEDIR_ABSOLUTE = path.resolve(__dirname, CACHEDIR_RELATIVE);
 
 // add an event handler to empty the cache dir each time the test suite runs
 QUnit.begin(function(){
-    fs.emptyDirSync(CACHEDIR);
+    fs.emptyDirSync(CACHEDIR_ABSOLUTE);
 });
 
 
@@ -176,7 +179,7 @@ QUnit.module('custom validators', {}, function(){
     QUnit.test('the folderExists validator', function(a){
         a.expect(4);
         a.strictEqual(typeof validate.validators.folderExists(undefined, true), 'undefined', 'undefined passes');
-        a.ok(!validate.isDefined(validate.validators.folderExists('./lib', true)), 'existing folder passes');
+        a.ok(!validate.isDefined(validate.validators.folderExists(path.join(__dirname, '..', 'lib'), true)), 'existing folder passes');
         a.ok(validate.isString(validate.validators.folderExists('/thingys', true)), 'non-existing path returns error message');
         a.ok(validate.isString(validate.validators.folderExists('./package.jason', true)), 'path to file returns error message');
     });
@@ -209,7 +212,7 @@ QUnit.module('The Databridge class', {}, function(){
             a.expect(3);
             var db = new Databridge();
             a.ok(db instanceof Databridge, 'object successfully constructed without args');
-            a.strictEqual(db._options.cacheDir, CACHEDIR, 'cache dir defaulted to expected value');
+            a.strictEqual(db._options.cacheDir, path.join('.', CACHEDIR_NAME), 'cache dir defaulted to expected value');
             a.strictEqual(db._options.defaultCacheTTL, 3600, 'default cache TTL defaulted to expected value');
         });
         
@@ -260,9 +263,11 @@ QUnit.module('The Databridge class', {}, function(){
         },
         function(){
             QUnit.test('methods exist', function(a){
-                a.expect(2);
+                a.expect(4);
                 a.equal(typeof this.db.registerDatasource, 'function', '.registerDatasource() exists');
+                a.strictEqual(this.db.register, this.db.registerDatasource, '.register() is an alias for .registerDatasource()');
                 a.equal(typeof this.db.datasource, 'function', '.datasource() exists');
+                a.strictEqual(this.db.source, this.db.datasource, '.source() is an alias for .datasource()');
             });
             
             QUnit.test('name clashes prevented on registration', function(a){
@@ -309,11 +314,11 @@ QUnit.module('The Databridge class', {}, function(){
     QUnit.module('data fetching and caching',
         {
             beforeEach: function(){
-                this.db = new Databridge();
+                this.db = new Databridge({cacheDir: CACHEDIR_ABSOLUTE});
                 let dummyData = ['thingys', 'whatsitis'];
                 this.dummyData = dummyData;
                 this.dsName = 'testDS';
-                this.ds = new Databridge.Datasource(this.dsName, function(){ return dummyData; });
+                this.ds = new Databridge.Datasource(this.dsName, function(){ return dummyData; }, {enableCaching: false});
                 this.db.registerDatasource(this.ds);
             }
         },
@@ -326,17 +331,72 @@ QUnit.module('The Databridge class', {}, function(){
                 a.strictEqual(db.fetch, db.fetchResponse, '.fetch() is an alias to .fetchResponse()');
             });
         
-            QUnit.test('fetch result object from un-cached immediately returning data source', function(a){
-                a.expect(2);
+            QUnit.test('.fetchResponse() from data source that returns immediately with caching disabled', function(a){
+                a.expect(3);
                 
                 var dummyData = this.dummyData;
                 var done = a.async();
                 var fr = this.db.fetchResponse(this.dsName, {}, []);
-                a.ok(validate.isPromise(fr.dataPromise()), 'data promise returned as part of response');
+                a.ok(fr instanceof Databridge.FetchResponse, 'a FetchResponse object returned');
+                a.ok(validate.isPromise(fr.dataPromise()), 'the response object contains a data promise');
                 if(validate.isPromise(fr.dataPromise())){
                     fr.dataPromise().then(
                         function(d){
                             a.deepEqual(d, dummyData, 'data promise resolves to expected value');
+                            done();
+                        },
+                        function(err){
+                            console.error('data promise rejected with error', err);
+                            done();
+                        }
+                    );
+                }else{
+                    done();
+                }
+            });
+            
+            QUnit.test('.fetchDataPromise() from data source that returns immediately with caching disabled', function(a){
+                a.expect(2);
+                
+                var dummyData = this.dummyData;
+                var done = a.async();
+                var dp = this.db.fetchDataPromise(this.dsName, {}, []);
+                a.ok(validate.isPromise(dp), 'returns a promise');
+                if(validate.isPromise(dp)){
+                    dp.then(
+                        function(d){
+                            a.deepEqual(d, dummyData, 'data promise resolves to expected value');
+                            done();
+                        },
+                        function(err){
+                            console.error('data promise rejected with error', err);
+                            done();
+                        }
+                    );
+                }else{
+                    done();
+                }
+            });
+            
+            QUnit.test('cache writting', function(a){
+                a.expect(7);
+                
+                var dummyData = this.dummyData;
+                var cachingDS = new Databridge.Datasource('testCachingDS', function(){ return dummyData; });
+                this.db.register(cachingDS);
+                var done = a.async();
+                
+                var fr = this.db.fetchResponse('testCachingDS', {}, []);
+                a.ok(validate.isPromise(fr.dataPromise()), 'the response object contains a data promise');
+                if(validate.isPromise(fr.dataPromise())){
+                    fr.dataPromise().then(
+                        function(d){
+                            a.deepEqual(d, dummyData, 'data promise resolved to expected value');
+                            a.ok(validateParams.isPlainObject(fr.meta('cacheWrite')), 'cacheWrite metadata is a plain object');
+                            a.ok(validate.isString(fr.meta('cacheWrite').path), 'cacheWrite.path metadata is a string');
+                            a.ok(fs.existsSync(fr.meta('cacheWrite').path), 'cache file exists on disk');
+                            a.notOk(validate.single(fr.meta('cacheWrite').timestamp, { presence: true, iso8601: true }),'cacheWrite.timestamp metadata is an ISO8601 string');
+                            a.deepEqual(fs.readJsonSync(fr.meta('cacheWrite').path).data, dummyData, 'correct data cached');
                             done();
                         },
                         function(err){

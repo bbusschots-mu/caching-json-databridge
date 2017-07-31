@@ -4,7 +4,7 @@
   "description": "A caching data bridge for NodeJS",
   "main": "lib/cjdb.js",
   "scripts": {
-    "test": "node_modules/qunitjs/bin/qunit test/test.js",
+    "test": "cd test; ../node_modules/qunitjs/bin/qunit test.js",
     "generate-docs": "node_modules/.bin/jsdoc --configure jsdoc.conf.json",
     "generate-docs-dev": "node_modules/.bin/jsdoc --configure jsdoc.conf.json --private --destination ./docs-dev"
   },

@@ -202,6 +202,18 @@ QUnit.module('custom validators', {}, function(){
     //    a.ok(!validate.isDefined(validate.validators.promise(Promise.reject(new Error('test')), true)), 'a rejected promise passes');
     //});
 	
+	QUnit.test('the namePath validator', function(a){
+        a.expect(8);
+        a.strictEqual(typeof validate.validators.namePath(undefined, true), 'undefined', 'undefined passes');
+        a.ok(!validate.isDefined(validate.validators.namePath('', true)), 'an empty string passes');
+		a.ok(!validate.isDefined(validate.validators.namePath('df1', true)), 'a valid name as a string passes');
+		a.ok(!validate.isDefined(validate.validators.namePath(['df1'], true)), 'a valid name as an array containing a single string passes');
+		a.ok(!validate.isDefined(validate.validators.namePath(['df1', 'df1a'], true)), 'an array of two valid names as strings passes');
+		a.ok(validate.isString(validate.validators.namePath(new Date(), true)), 'a prototyped object returns an error message');
+		a.ok(validate.isString(validate.validators.namePath([], true)), 'an empty array returns an error message');
+		a.ok(validate.isString(validate.validators.namePath([new Date()], true)), 'an array containing a non-string returns an error message');
+    });
+	
 	QUnit.test('the dataFetcher validator', function(a){
         a.expect(11);
         a.strictEqual(typeof validate.validators.dataFetcher(undefined, true), 'undefined', 'undefined passes');
@@ -310,10 +322,9 @@ QUnit.module('The Databridge class', {}, function(){
             });
             
             QUnit.test('source correctly registered & fetched', function(a){
-                a.expect(3);
+                a.expect(2);
                 this.db.registerDatasource('testDS', this.ds);
                 a.strictEqual(this.db._datasources.testDS, this.ds, 'datasource saved in ._datasources property with correct name');
-                a.strictEqual(typeof this.db.testDS, 'function', 'shortcut function added for datasource');
                 a.strictEqual(this.db.datasource('testDS'), this.ds, 'datasource retrieved with .datasource() accessor');
             });
             
@@ -324,6 +335,35 @@ QUnit.module('The Databridge class', {}, function(){
             QUnit.test('.source() is a shortcut to .datasource()', function(a){
                 a.strictEqual(this.db.source, this.db.datasource);
             });
+			
+			QUnit.module('creation of shortcut functions', {}, function(){
+				QUnit.test('the single-data-fetcher case', function(a){
+					a.expect(1);
+					let db = new cjdb.Databridge({ cacheDir: './' });
+					let ds = new cjdb.Datasource(function(){ return true; });
+					db.register('testDS', ds);
+					a.ok(validate.isFunction(db.testDS));
+				});
+				
+				QUnit.test('the flat multiple fetcher case', function(a){
+					a.expect(2);
+					let db = new cjdb.Databridge({ cacheDir: './' });
+					let ds = new cjdb.Datasource({ cb1: function(){ return true; }, cb2: function(){ return false; } });
+					db.register('testDS', ds);
+					a.ok(validateParams.isPlainObject(db.testDS), 'top-level shortcut is a plain object');
+					a.ok(validate.isFunction(db.testDS.cb1), 'second-level shortcut is a function');
+				});
+				
+				QUnit.test('the nested multiple fetcher case', function(a){
+					a.expect(3);
+					let db = new cjdb.Databridge({ cacheDir: './' });
+					let ds = new cjdb.Datasource({ cb1: { cb1a: function(){ return true; }, cb1b: function(){ return false; } } });
+					db.register('testDS', ds);
+					a.ok(validateParams.isPlainObject(db.testDS), 'top-level shortcut is a plain object');
+					a.ok(validateParams.isPlainObject(db.testDS.cb1), 'second-level shortcut is a plain object');
+					a.ok(validate.isFunction(db.testDS.cb1.cb1a), 'third-level shortcut is a function');
+				});
+			});
         }
     );
     
@@ -652,6 +692,15 @@ QUnit.module('The Datasource class', {}, function(){
 				});
 			}
 		);
+	});
+	
+	QUnit.test('.hasSingleDataFetcher() utility function', function(a){
+		a.expect(3);
+		let ds1 = new cjdb.Datasource(function(){});
+		a.ok(validate.isFunction(ds1.hasSingleDataFetcher), 'function exists');
+		a.strictEqual(ds1.hasSingleDataFetcher(), true, 'returns true on datasource with single data fetcher');
+		let ds2 = new cjdb.Datasource({ cb1: function(){}, cb2: function(){} });
+		a.strictEqual(ds2.hasSingleDataFetcher(), false, 'returns false on datasource with multiple data fetchers');
 	});
     
     QUnit.module(

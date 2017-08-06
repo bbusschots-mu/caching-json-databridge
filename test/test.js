@@ -536,9 +536,132 @@ QUnit.module('The Datasource class', {}, function(){
             a.strictEqual(ds._options.cacheTTL, testTTL, 'cache TTL option successfully stored');
         });
     });
+	
+	QUnit.module('read-only accessor .dataFetcher()', {}, function(){
+		QUnit.test('function exists', function(a){
+			a.expect(1);
+			let ds = new cjdb.Datasource(function(){});
+            a.ok(validate.isFunction(ds.dataFetcher));
+        });
+		
+		QUnit.module('single callback case',
+			{
+				beforeEach: function(){
+					this.df = function(){ return true; };
+					this.ds = new cjdb.Datasource(this.df, { enableCaching: false });
+				}
+			},
+			function(){
+				QUnit.test('returns expected value', function(a){
+					a.expect(2);
+					a.strictEqual(this.ds.dataFetcher(), this.df, 'expected value returned with no params');
+					a.strictEqual(this.ds.dataFetcher([]), this.df, 'expected value returned with empty array as first param');
+				});
+				
+				QUnit.test('throws Error when passed name path', function(a){
+					a.expect(4);
+					a.throws(
+						function(){ this.ds.dataFetcher('thingy'); },
+						Error,
+						'error on single string'
+					);
+					a.throws(
+						function(){ this.ds.dataFetcher('thingy', 'stuff'); },
+						Error,
+						'error on multiple strings'
+					);
+					a.throws(
+						function(){ this.ds.dataFetcher(['thingy']); },
+						Error,
+						'error on single string array'
+					);
+					a.throws(
+						function(){ this.ds.dataFetcher(['thingy', 'stuff']); },
+						Error,
+						'error on multiple string array'
+					);
+				});
+			}
+		);
+		
+		QUnit.module('flat multiple callbacks case',
+			{
+				beforeEach: function(){
+					this.dfCol = {
+						cb1: function(){ return true; },
+						cb2: function(){ return false; }
+					};
+					this.ds = new cjdb.Datasource(this.dfCol, { enableCaching: false });
+				}
+			},
+			function(){
+				QUnit.test('returns expected values', function(a){
+					a.expect(5);
+					a.strictEqual(this.ds.dataFetcher(), this.dfCol, 'returns entire datastructure when passed no params');
+					a.strictEqual(this.ds.dataFetcher('cb1'), this.dfCol.cb1, 'returns correct callback when passed single string');
+					a.strictEqual(this.ds.dataFetcher(['cb1']), this.dfCol.cb1, 'returns correct callback when passed array contianing single string');
+					a.throws(
+						() => this.ds.dataFetcher('cb3'),
+						Error,
+						'throws error when passed name that does not map to a callback as single string'
+					);
+					a.throws(
+						() => this.ds.dataFetcher(['cb3']),
+						Error,
+						'throws error when passed name that does not map to a callback as array containing single string'
+					);
+				});
+			}
+		);
+		
+		QUnit.module('nested multiple callbacks case',
+			{
+				beforeEach: function(){
+					this.dfCol = {
+						cb1: {
+							cb1a: function(){ return true; },
+							cb1b: function(){ return null; }
+						},
+						cb2: function(){ return false; }
+					};
+					this.ds = new cjdb.Datasource(this.dfCol, { enableCaching: false });
+				}
+			},
+			function(){
+				QUnit.test('returns expected values', function(a){
+					a.expect(9);
+					a.strictEqual(this.ds.dataFetcher(), this.dfCol, 'returns entire datastructure when passed no params');
+					a.strictEqual(this.ds.dataFetcher('cb1'), this.dfCol.cb1, 'returns correct sub-data-structure when passed single string');
+					a.strictEqual(this.ds.dataFetcher(['cb1']), this.dfCol.cb1, 'returns correct sub-data-structure when passed array contianing single string');
+					a.strictEqual(this.ds.dataFetcher('cb1', 'cb1a'), this.dfCol.cb1.cb1a, 'returns correct callback when passed two strings');
+					a.strictEqual(this.ds.dataFetcher(['cb1', 'cb1a']), this.dfCol.cb1.cb1a, 'returns correct callback when passed array contianing two strings');
+					a.throws(
+						() => this.ds.dataFetcher('cb3'),
+						Error,
+						'throws error when passed name that does not map to a callback at the top level as a single string'
+					);
+					a.throws(
+						() => this.ds.dataFetcher(['cb3']),
+						Error,
+						'throws error when passed name that does not map to a callback at the top level as array containing single string'
+					);
+					a.throws(
+						() => this.ds.dataFetcher('cb1', 'cb1c'),
+						Error,
+						'throws error when passed name that does not map to a callback at the second level as a single string'
+					);
+					a.throws(
+						() => this.ds.dataFetcher(['cb1', 'cb1c']),
+						Error,
+						'throws error when passed name that does not map to a callback at the second level as array containing single string'
+					);
+				});
+			}
+		);
+	});
     
     QUnit.module(
-        'read-only accessors',
+        'read-only accessor .option()',
         {
             beforeEach: function(){
                 this.df = function(){ return true; };
@@ -546,19 +669,12 @@ QUnit.module('The Datasource class', {}, function(){
             }
         },
         function(){
-            QUnit.test('.dataFetcher() exists', function(a){
-                a.ok(validate.isFunction(this.ds.dataFetcher));
-            });
             
-            QUnit.test('.dataFetcher() returns expected value', function(a){
-                a.strictEqual(this.ds.dataFetcher(), this.df);
-            });
-            
-            QUnit.test('.option() exists', function(a){
+            QUnit.test('function exists', function(a){
                 a.ok(validate.isFunction(this.ds.option));
             });
             
-            QUnit.test('.option() returns expected values', function(a){
+            QUnit.test('returns expected values', function(a){
                 a.expect(2);
                 a.strictEqual(this.ds.option('cacheTTL'), 300, 'expected value returned for defined option');
                 a.strictEqual(typeof this.ds.option('thingy'), 'undefined', 'undefined returned for un-specified option');

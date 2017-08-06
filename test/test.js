@@ -210,7 +210,7 @@ QUnit.module('The Databridge class', {}, function(){
     QUnit.module('constructor', {}, function(){
         QUnit.test('building default object', function(a){
             a.expect(3);
-            var db = new cjdb.Databridge();
+            let db = new cjdb.Databridge();
             a.ok(db instanceof cjdb.Databridge, 'object successfully constructed without args');
             a.strictEqual(db._options.cacheDir, path.join('.', CACHEDIR_NAME), 'cache dir defaulted to expected value');
             a.strictEqual(db._options.defaultCacheTTL, 3600, 'default cache TTL defaulted to expected value');
@@ -218,9 +218,9 @@ QUnit.module('The Databridge class', {}, function(){
         
         QUnit.test('specified options correctly stored', function(a){
             a.expect(2);
-            var testPath = './';
-            var testTTL = 300;
-            var db = new cjdb.Databridge({cacheDir: testPath, defaultCacheTTL: testTTL});
+            let testPath = './';
+            let testTTL = 300;
+            let db = new cjdb.Databridge({cacheDir: testPath, defaultCacheTTL: testTTL});
             a.strictEqual(db._options.cacheDir, testPath, 'cache dir correctly stored');
             a.strictEqual(db._options.defaultCacheTTL, testTTL, 'default cache TTL correctly stored');
         });
@@ -258,7 +258,7 @@ QUnit.module('The Databridge class', {}, function(){
         {
             beforeEach: function(){
                 this.db = new cjdb.Databridge({ cacheDir: './' });
-                this.ds = new cjdb.Datasource('testDS', function(){ return true; });
+                this.ds = new cjdb.Datasource(function(){ return true; });
             }
         },
         function(){
@@ -272,17 +272,17 @@ QUnit.module('The Databridge class', {}, function(){
             
             QUnit.test('name clashes prevented on registration', function(a){
                 a.expect(2);
-                this.db.registerDatasource(this.ds);
+                this.db.registerDatasource('testDS', this.ds);
                 a.throws(
                     function(){
-                        this.db.registerDatasource(new cjdb.Datasource('testDS', function(){}));
+                        this.db.registerDatasource('testDS', new cjdb.Datasource(function(){}));
                     },
                     Error,
                     'clashing datasource name rejected'
                 );
                 a.throws(
                     function(){
-                        this.db.registerDatasource(new cjdb.Datasource('option', function(){}));
+                        this.db.registerDatasource('option', new cjdb.Datasource(function(){}));
                     },
                     Error,
                     'datasource name that clashes with instance method name rejected'
@@ -290,15 +290,15 @@ QUnit.module('The Databridge class', {}, function(){
             });
             
             QUnit.test('function chanining supported by registration function', function(a){
-                a.strictEqual(this.db.registerDatasource(this.ds), this.db);
+                a.strictEqual(this.db.registerDatasource('testDS', this.ds), this.db);
             });
             
             QUnit.test('source correctly registered & fetched', function(a){
                 a.expect(3);
-                this.db.registerDatasource(this.ds);
-                a.strictEqual(this.db._datasources[this.ds.name()], this.ds, 'datasource saved in ._datasources property with correct name');
-                a.strictEqual(typeof this.db[this.ds.name()], 'function', 'shortcut function added for datasource');
-                a.strictEqual(this.db.datasource(this.ds.name()), this.ds, 'datasource retrieved with .datasource() accessor');
+                this.db.registerDatasource('testDS', this.ds);
+                a.strictEqual(this.db._datasources.testDS, this.ds, 'datasource saved in ._datasources property with correct name');
+                a.strictEqual(typeof this.db.testDS, 'function', 'shortcut function added for datasource');
+                a.strictEqual(this.db.datasource('testDS'), this.ds, 'datasource retrieved with .datasource() accessor');
             });
             
             QUnit.test('.datasource() returns undefined for unregistered sources', function(a){
@@ -318,8 +318,8 @@ QUnit.module('The Databridge class', {}, function(){
                 let dummyData = ['thingys', 'whatsitis'];
                 this.dummyData = dummyData;
                 this.dsName = 'testDS';
-                this.ds = new cjdb.Datasource(this.dsName, function(){ return dummyData; }, {enableCaching: false});
-                this.db.registerDatasource(this.ds);
+                this.ds = new cjdb.Datasource(function(){ return dummyData; }, {enableCaching: false});
+                this.db.registerDatasource(this.dsName, this.ds);
             }
         },
         function(){
@@ -382,8 +382,8 @@ QUnit.module('The Databridge class', {}, function(){
                 a.expect(7);
                 
                 var dummyData = this.dummyData;
-                var cachingDS = new cjdb.Datasource('testCachingDS', function(){ return dummyData; });
-                this.db.register(cachingDS);
+                var cachingDS = new cjdb.Datasource(function(){ return dummyData; });
+                this.db.register('testCachingDS', cachingDS);
                 var done = a.async();
                 
                 var fr = this.db.fetchResponse('testCachingDS', {}, []);
@@ -416,8 +416,8 @@ QUnit.module('The Databridge class', {}, function(){
                 let db = this.db;
                 let dummyData = this.dummyData;
                 let dsName = 'cacheTest' + moment().unix(); // make sure it's unique each time
-                let cachingDS = new cjdb.Datasource(dsName, function(){ return dummyData; });
-                db.register(cachingDS);
+                let cachingDS = new cjdb.Datasource(function(){ return dummyData; });
+                db.register(dsName, cachingDS);
                 
                 // start async mode
                 let done = a.async();
@@ -494,7 +494,7 @@ QUnit.module('The Datasource class', {}, function(){
     
     QUnit.module('constructor', {}, function(){
         QUnit.test('required arguments & defaults', function(a){
-            a.expect(6);
+            a.expect(5);
             a.throws(
                 function(){
                     new cjdb.Datasource();
@@ -502,28 +502,19 @@ QUnit.module('The Datasource class', {}, function(){
                 validateParams.ValidationError,
                 'throws error when no arguments are passed'
             );
-            a.throws(
-                function(){
-                    new cjdb.Datasource('test');
-                },
-                validateParams.ValidationError,
-                'throws error when only a name is passed'
-            );
-            var defDS = new cjdb.Datasource('test', function(){});
-            a.ok(defDS, 'no error thrown when passed both a name and a callback but no options');
+            var defDS = new cjdb.Datasource(function(){});
+            a.ok(defDS, 'no error thrown when passed a callback but no options');
             a.strictEqual(defDS._options.enableCaching, true, 'caching enabled by default');
             a.strictEqual(typeof defDS._options.cacheTTL, 'undefined', 'no custom cache TTL set by default');
-            a.ok(new cjdb.Datasource('test', function(){}, {cacheTTL: 300}), 'no error thrown when passed both a name, a callback, and options');
+            a.ok(new cjdb.Datasource(function(){}, {cacheTTL: 300}), 'no error thrown when passed both a callback and options');
         });
         
         QUnit.test('data correctly stored', function(a){
-            a.expect(4);
-            var testName = 'test';
+            a.expect(3);
             var testFn = function(){ return true; };
             var testTTL = 500;
             var testCacheEnable = false;
-            var ds = new cjdb.Datasource(testName, testFn, {cacheTTL: testTTL, enableCaching: testCacheEnable});
-            a.strictEqual(ds._name, testName, 'name successfully stored');
+            var ds = new cjdb.Datasource(testFn, {cacheTTL: testTTL, enableCaching: testCacheEnable});
             a.strictEqual(ds._dataFetcher, testFn, 'data fether callback successfully stored');
             a.strictEqual(ds._options.enableCaching, testCacheEnable, 'cache enabling option successfully stored');
             a.strictEqual(ds._options.cacheTTL, testTTL, 'cache TTL option successfully stored');
@@ -535,18 +526,10 @@ QUnit.module('The Datasource class', {}, function(){
         {
             beforeEach: function(){
                 this.df = function(){ return true; };
-                this.ds = new cjdb.Datasource('test', this.df, { enableCaching: true, cacheTTL: 300 });
+                this.ds = new cjdb.Datasource(this.df, { enableCaching: true, cacheTTL: 300 });
             }
         },
         function(){
-            QUnit.test('.name() exists', function(a){
-                a.ok(validate.isFunction(this.ds.name));
-            });
-            
-            QUnit.test('.name() returns expected value', function(a){
-                a.strictEqual(this.ds.name(), 'test');
-            });
-            
             QUnit.test('.dataFetcher() exists', function(a){
                 a.ok(validate.isFunction(this.ds.dataFetcher));
             });
@@ -572,7 +555,7 @@ QUnit.module('The Datasource class', {}, function(){
         
         //var db = new Databridge();
         var dummyData = { a: 'b', c: 'd' };
-        var ds = new cjdb.Datasource('testDS', function(){ return dummyData; });
+        var ds = new cjdb.Datasource(function(){ return dummyData; });
         var done = a.async();
         var dp = ds.fetchDataPromise();
         dp.then(
@@ -596,7 +579,7 @@ QUnit.module('The FetchRequest class', {}, function(){
         QUnit.test('required arguments', function(a){
             a.expect(6);
             var db = new cjdb.Databridge();
-            var ds = new cjdb.Datasource('testDS', function(){ return true; });
+            var ds = new cjdb.Datasource(function(){ return true; });
             a.throws(
                 function(){
                     new cjdb.FetchRequest();
@@ -638,7 +621,7 @@ QUnit.module('The FetchRequest class', {}, function(){
         QUnit.test('data correctly stored', function(a){
             a.expect(5);
             var db = new cjdb.Databridge();
-            var ds = new cjdb.Datasource('testDS', function(){ return true; });
+            var ds = new cjdb.Datasource(function(){ return true; });
             var opts = { enableCaching: true };
             var params = [true];
             var ts = moment().toISOString();
@@ -656,7 +639,7 @@ QUnit.module('The FetchRequest class', {}, function(){
         {
             beforeEach: function(){
                 this.db = new cjdb.Databridge();
-                this.ds = new cjdb.Datasource('test', function(){ return true; });
+                this.ds = new cjdb.Datasource(function(){ return true; });
                 this.opts = { cacheTTL: 300 };
                 this.params = [true];
                 this.ts = moment().toISOString();
@@ -712,7 +695,7 @@ QUnit.module('The FetchResponse class', {}, function(){
         QUnit.test('required arguments', function(a){
             a.expect(3);
             var db = new cjdb.Databridge();
-            var ds = new cjdb.Datasource('testDS', function(){ return true; });
+            var ds = new cjdb.Datasource(function(){ return true; });
             var fr = new cjdb.FetchRequest(db, ds, {}, [], moment().toISOString());
             a.throws(
                 function(){
@@ -728,7 +711,7 @@ QUnit.module('The FetchResponse class', {}, function(){
         QUnit.test('data correctly stored', function(a){
             a.expect(2);
             var db = new cjdb.Databridge();
-            var ds = new cjdb.Datasource('testDS', function(){ return true; });
+            var ds = new cjdb.Datasource(function(){ return true; });
             var freq = new cjdb.FetchRequest(db, ds, {}, [], moment().toISOString());
             var m = {};
             var fres = new cjdb.FetchResponse(freq, m);
@@ -742,7 +725,7 @@ QUnit.module('The FetchResponse class', {}, function(){
         {
             beforeEach: function(){
                 this.db = new cjdb.Databridge();
-                this.ds = new cjdb.Datasource('test', function(){ return true; });
+                this.ds = new cjdb.Datasource(function(){ return true; });
                 this.freq = new cjdb.FetchRequest(this.db, this.ds, {}, [], moment().toISOString());
                 this.m = { a: 'b' };
                 this.fres = new cjdb.FetchResponse(this.freq, this.m);

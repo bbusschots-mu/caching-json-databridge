@@ -509,17 +509,11 @@ QUnit.module('The Datasource class', {}, function(){
     });
     
     QUnit.module('constructor', {}, function(){
-        QUnit.test('required arguments & defaults', function(a){
+        QUnit.test('defaults', function(a){
             a.expect(5);
-            a.throws(
-                function(){
-                    new cjdb.Datasource();
-                },
-                validateParams.ValidationError,
-                'throws error when no arguments are passed'
-            );
-            var defDS = new cjdb.Datasource(function(){});
-            a.ok(defDS, 'no error thrown when passed a callback but no options');
+            let defDS = new cjdb.Datasource();
+            a.ok(defDS, 'no error thrown when passed no parameters');
+			a.deepEqual(defDS._dataFetcher, {}, 'data fetcher defaults to empty plain object');
             a.strictEqual(defDS._options.enableCaching, true, 'caching enabled by default');
             a.strictEqual(typeof defDS._options.cacheTTL, 'undefined', 'no custom cache TTL set by default');
             a.ok(new cjdb.Datasource(function(){}, {cacheTTL: 300}), 'no error thrown when passed both a callback and options');

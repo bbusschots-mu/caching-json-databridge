@@ -171,9 +171,10 @@ function dummyBasicTypesExcept(){
 
 QUnit.module('custom validators', {}, function(){
     QUnit.test('custom validators registered', function(a){
-        a.expect(2);
+        a.expect(3);
         a.strictEqual(typeof validate.validators.folderExists, 'function', 'folderExists is registered');
         a.strictEqual(typeof validate.validators.iso8601, 'function', 'iso8601 is registered');
+		a.strictEqual(typeof validate.validators.dataFetcher, 'function', 'dataFetcher is registered');
     });
     
     QUnit.test('the folderExists validator', function(a){
@@ -200,6 +201,21 @@ QUnit.module('custom validators', {}, function(){
     //    a.ok(!validate.isDefined(validate.validators.promise(Promise.resolve(true), true)), 'a resolved promise passes');
     //    a.ok(!validate.isDefined(validate.validators.promise(Promise.reject(new Error('test')), true)), 'a rejected promise passes');
     //});
+	
+	QUnit.test('the dataFetcher validator', function(a){
+        a.expect(11);
+        a.strictEqual(typeof validate.validators.dataFetcher(undefined, true), 'undefined', 'undefined passes');
+        a.ok(!validate.isDefined(validate.validators.dataFetcher(function(){}, true)), 'a callback passes');
+		a.ok(!validate.isDefined(validate.validators.dataFetcher({}, true)), 'an empty plain object passes');
+		a.ok(!validate.isDefined(validate.validators.dataFetcher({main: function(){}}, true)), 'a plain object defining a single callback passes');
+		a.ok(!validate.isDefined(validate.validators.dataFetcher({main: function(){}, math: {add: function(){}}}, true)), 'a nested plain object defining multiple callbacks passes');
+		a.ok(validate.isString(validate.validators.dataFetcher('thingys', true)), 'a string returns an error message');
+		a.ok(validate.isString(validate.validators.dataFetcher(new Date(), true)), 'a prototyped object returns an error message');
+		a.ok(validate.isString(validate.validators.dataFetcher({'thingys-whatsists': function(){}}, true)), 'a plain object with an invalid key returns an error message');
+		a.ok(validate.isString(validate.validators.dataFetcher({thingys: {'whatsits-thing': function(){}}}, true)), 'a plain object with a nested invalid key returns an error message');
+		a.ok(validate.isString(validate.validators.dataFetcher({thingys: 'whatsists'}, true)), 'a plain object with an invalid value returns an error message');
+		a.ok(validate.isString(validate.validators.dataFetcher({thingys: {whatsists: 'stuff'}}, true)), 'a plain object with a nested invalid value returns an error message');
+    });
 });
 
 QUnit.module('The Databridge class', {}, function(){

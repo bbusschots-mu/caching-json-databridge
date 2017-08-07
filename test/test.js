@@ -598,7 +598,7 @@ QUnit.module('The Databridge class', {}, function(){
 			});
 			
 			QUnit.test('caching - datafetcher with parameter', function(a){
-				a.expect(8);
+				a.expect(9);
                 
                 // prep the data source
                 let db = this.db;
@@ -612,6 +612,69 @@ QUnit.module('The Databridge class', {}, function(){
                 
                 // fetch the data from the source once bypassing the cache so a fresh copy can be written to the cache
                 let fr1 = db.fetchResponse(dsName, { bypassCache: true }, [fParam]);
+				a.strictEqual(fr1.meta('streamName'), 'n_42', 'correct stream name used');
+				if(validate.isPromise(fr1.dataPromise())){
+					fr1.dataPromise().then(
+                        function(){
+							// check the cache was written OK
+                            a.ok(validateParams.isPlainObject(fr1.meta('cacheWrite')), 'data cached in prep for test retrieval');
+                            let cachePath = fr1.meta('cacheWrite').path;
+                            a.ok(validate.isString(cachePath) && !validate.isEmpty(cachePath), 'cache path included in response meta');
+                            a.ok(fs.existsSync(cachePath), 'cache file exists on disk');
+                            
+                            // make a second call to try retrieve the data from the cache
+                            let fr2 = db.fetchResponse(dsName, {}, [fParam]);
+							if(validate.isPromise(fr2.dataPromise())){
+                                fr2.dataPromise().then(
+                                    function(data){
+										a.ok(validateParams.isPlainObject(fr2.meta('cacheRead')), 'data read from cache');
+                                        a.ok(validate.isString(fr2.meta('cacheRead').path), 'cacheRead.path metadata is a string');
+                                        a.ok(fs.existsSync(fr2.meta('cacheRead').path), 'cacheRead.path points to a file that exists on disk');
+                                        a.notOk(validate.single(fr2.meta('cacheRead').timestamp, { presence: true, iso8601: true }),'cacheRead.timestamp metadata is an ISO8601 string');
+                                        a.deepEqual(data, 'I got 42', 'correct data read from cache');
+										done();
+									},
+                                    function(err){
+                                        console.error('data promise in second call rejected with error', err);
+                                        done();
+                                    }
+                                );
+							}else{
+                                console.error('second call did not return a data promise');
+                                done();
+                            }
+						},
+						function(err){
+                            console.error('data promise in first call rejected with error', err);
+                            done();
+                        }
+					);
+				}else{
+                    console.error('first call did not return a data promise');
+                    done();
+                }
+			});
+			
+			QUnit.test('caching - datafetcher with custom stream name', function(a){
+				a.expect(9);
+                
+                // prep the data source
+                let db = this.db;
+                let dsName = 'snGenCacheTest' + moment().unix(); // make sure it's unique each time
+				let fetcher = function(n){ return 'I got ' + n; };
+				fetcher.streamNameGenerator = function(fParams){
+					return 'test_' + fParams[0];
+				};
+                let cachingDS = new cjdb.Datasource(fetcher);
+				let fParam = 42;
+                db.register(dsName, cachingDS);
+                
+                // start async mode
+                let done = a.async();
+                
+                // fetch the data from the source once bypassing the cache so a fresh copy can be written to the cache
+                let fr1 = db.fetchResponse(dsName, { bypassCache: true }, [fParam]);
+				a.strictEqual(fr1.meta('streamName'), 'test_42', 'correct stream name used');
 				if(validate.isPromise(fr1.dataPromise())){
 					fr1.dataPromise().then(
                         function(){

@@ -596,6 +596,63 @@ QUnit.module('The Databridge class', {}, function(){
                     done();
                 }
 			});
+			
+			QUnit.test('caching - datafetcher with parameter', function(a){
+				a.expect(8);
+                
+                // prep the data source
+                let db = this.db;
+                let dsName = 'paramCacheTest' + moment().unix(); // make sure it's unique each time
+                let cachingDS = new cjdb.Datasource(function(n){ return 'I got ' + n; });
+				let fParam = 42;
+                db.register(dsName, cachingDS);
+                
+                // start async mode
+                let done = a.async();
+                
+                // fetch the data from the source once bypassing the cache so a fresh copy can be written to the cache
+                let fr1 = db.fetchResponse(dsName, { bypassCache: true }, [fParam]);
+				if(validate.isPromise(fr1.dataPromise())){
+					fr1.dataPromise().then(
+                        function(){
+							// check the cache was written OK
+                            a.ok(validateParams.isPlainObject(fr1.meta('cacheWrite')), 'data cached in prep for test retrieval');
+                            let cachePath = fr1.meta('cacheWrite').path;
+                            a.ok(validate.isString(cachePath) && !validate.isEmpty(cachePath), 'cache path included in response meta');
+                            a.ok(fs.existsSync(cachePath), 'cache file exists on disk');
+                            
+                            // make a second call to try retrieve the data from the cache
+                            let fr2 = db.fetchResponse(dsName, {}, [fParam]);
+							if(validate.isPromise(fr2.dataPromise())){
+                                fr2.dataPromise().then(
+                                    function(data){
+										a.ok(validateParams.isPlainObject(fr2.meta('cacheRead')), 'data read from cache');
+                                        a.ok(validate.isString(fr2.meta('cacheRead').path), 'cacheRead.path metadata is a string');
+                                        a.ok(fs.existsSync(fr2.meta('cacheRead').path), 'cacheRead.path points to a file that exists on disk');
+                                        a.notOk(validate.single(fr2.meta('cacheRead').timestamp, { presence: true, iso8601: true }),'cacheRead.timestamp metadata is an ISO8601 string');
+                                        a.deepEqual(data, 'I got 42', 'correct data read from cache');
+										done();
+									},
+                                    function(err){
+                                        console.error('data promise in second call rejected with error', err);
+                                        done();
+                                    }
+                                );
+							}else{
+                                console.error('second call did not return a data promise');
+                                done();
+                            }
+						},
+						function(err){
+                            console.error('data promise in first call rejected with error', err);
+                            done();
+                        }
+					);
+				}else{
+                    console.error('first call did not return a data promise');
+                    done();
+                }
+			});
         }
     );
 });
@@ -800,6 +857,20 @@ QUnit.module('The Datasource class', {}, function(){
             }
         );
     });
+	
+	QUnit.test('defaultStreamNameGenerator() static function', function(a){
+		a.expect(10);
+		a.ok(validate.isFunction(cjdb.Datasource.defaultStreamNameGenerator), 'function exists');
+		a.strictEqual(cjdb.Datasource.defaultStreamNameGenerator(), 'main', "calling with no params returns 'main'");
+		a.strictEqual(cjdb.Datasource.defaultStreamNameGenerator([true]), 'true', "calling with single boolean true returns 'true'");
+		a.strictEqual(cjdb.Datasource.defaultStreamNameGenerator([false]), 'false', "calling with single boolean false returns 'false'");
+		a.strictEqual(cjdb.Datasource.defaultStreamNameGenerator([42]), 'n_42', "calling with single number without -, ., or e returns number pre-fixed with 'n_'");
+		a.strictEqual(cjdb.Datasource.defaultStreamNameGenerator([-42.6]), 'n_96e1a1514a86153f31480dc745808772', "calling with single number with a -, ., or e returns the MD5 of the number as a string pre-fixed with 'n_'");
+		a.strictEqual(cjdb.Datasource.defaultStreamNameGenerator(['boogers']), 's_boogers', "calling with single string that is a valid name returns the string prefixed with 's_'");
+		a.strictEqual(cjdb.Datasource.defaultStreamNameGenerator(['$']), 's_c3e97dd6e97fb5125688c97f36720cbe', "calling with single string that's not a valid name returns the MD5 hash of the string prefixed with 's_'");
+		a.strictEqual(cjdb.Datasource.defaultStreamNameGenerator([{a: 'b'}]), 'o_92eff9dda44cb8003ee13990782580ff', "calling with single plain object returns the MD5 hash of the JSON version of object prefixed with 'o_'");
+		a.strictEqual(cjdb.Datasource.defaultStreamNameGenerator(['thingys', 42]), 'p2_aed9d8d35ce236895dbdd1e061a5f369', "calling with multiple values returns the MD5 hash of the JSON version of all params pre-fixed with 'pN_' where N is num params");
+	});
 });
 
 QUnit.module('The FetchRequest class', {}, function(){

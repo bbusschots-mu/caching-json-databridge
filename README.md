@@ -4,8 +4,8 @@ A NodeJS module designed to act as caching middle-ware between apps or scripts
 that need access to data that can be represented as a JSON string, and sources
 of that data.
 
-Each data source must provide a data fetching function which returns a promise
-of data that can be serialised to a JSON file for caching.
+Each data source must provide one or more data fetching functions which return
+a promise of data that can be serialised to a JSON file for caching.
 
 The module provides control over the cache TTL, and the ability to bypass the
 cache when truly live data is needed.
@@ -13,10 +13,23 @@ cache when truly live data is needed.
 ## Module Architecture
 
 A *databridge* is an object that manages multiple *datasources*, each of which
-contain one *data fetcher function* which can take arbitarily many arguments,
-return data tagged as belonging to arbitarily many separate *data streams*, each
-of which is separately cached. By default, every data source is assumed to have
-a single data stream named `main`.
+contain one or more *data fetcher functions* which accept arbitarily many
+parameters, and can be arranged into nested namespaces if desired.
+
+Data returned from data fetchers that accept parameters is split into named
+*data streams* for caching. The module does its best to handle this
+automatically, but when you need to pass values that can't be converted to
+a JSON string as parameters to a data fetcher you'll need to provide a
+custom *stream name generaterator* function. When a data fetcher is called with
+no parameters the data stream name `main` is used.
+
+As a practical example, a data fetcher that retrieves all movies released in a
+given year would need one parameter - the year. A separate cache needs to be
+maintained for each year, so each year value should result in a different
+stream name. The default stream name generator would convert the single
+parameter value `1980` into the stream name `n_1980`. So, if you fetch the
+movies for 1980, and then 1982, two separate caches will be created, one for
+the stream name `n_1980` and one for the stream name `n_1982`.
 
 Databridges define a default cache TTL, but each datasource can specify a custom
 TTL.

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>FetchRequest - Documentation</title>
+    <title>Global - Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -29,7 +29,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">FetchRequest</h1>
+    <h1 class="page-title">Global</h1>
     
 
     
@@ -42,12 +42,8 @@
 <header>
     
         <h2>
-            <span class="ancestors"><a href="module-@maynoothuniversity_caching-json-databridge.html">@maynoothuniversity/caching-json-databridge</a>~</span>
         
-        FetchRequest
         </h2>
-        
-            <div class="class-description"><p>A class representing a request to fetch data from a datasource.</p></div>
         
     
 </header>
@@ -56,17 +52,325 @@
     <div class="container-overview">
     
         
+
+        
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+        
+    
+    </div>
+
+    
+
+    
+
+    
+
+     
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Type Definitions</h3>
+
+        
+                
+<div class="section-members">
+<h4 class="name" id="DatabridgeName"><span class="icon type-jsdoc">T</span>DatabridgeName</h4>
+
+
+
+
+<div class="description">
+    <p>A valid name for databridge resources like sources and streams. Specifically,
+a string of three or more characters starting with a letter and containing
+only letters, digits, and underscores.</p>
+</div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type"><code>string</code></span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+</div>
+
+            
+                
+<div class="section-members">
+<h4 class="name" id="DatabridgeNamePath"><span class="icon type-jsdoc">T</span>DatabridgeNamePath</h4>
+
+
+
+
+<div class="description">
+    <p>A valid name path for potntially nested databridge resources streams. Can be
+a single valid databridge name as a string, or an array of valid databridge
+names.</p>
+</div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type"><code><a href="global.html#DatabridgeName">DatabridgeName</a></code></span>
+|
+
+<span class="param-type"><code>Array.&lt;<a href="global.html#DatabridgeName">DatabridgeName</a>></code></span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+</div>
+
+            
+                
 <div class="section-method">
 
     
-    <h2>Constructor</h2>
-    
 
-    <h4 class="name" id="FetchRequest"><span class="icon type-function">F<small>c</small></span><span class="type-signature"></span>new FetchRequest<span class="signature">(bridge, source, fetchOptions, fetcherPath, fetcherParams, timestamp)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="DataFetcher"><span class="icon type-jsdoc">F</span><span class="type-signature"></span>DataFetcher<span class="signature">()</span><span class="type-signature"></span></h4>
 
     
 
 
+
+<div class="description">
+    <p>A valid data fetcher definition. This can be either a single data fetcher
+callback, or, a potentially nested plain object containing multiple data
+fether callbacks where all key names are valid databridge resource names.</p>
+</div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li><a href="global.html#DataFetcherCallback">DataFetcherCallback</a></li>
+        
+            <li><a href="global.html#DatabridgeName">DatabridgeName</a></li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+            
+                
+<div class="section-method">
+
+    
+
+    <h4 class="name" id="DataFetcherCallback"><span class="icon type-jsdoc">F</span><span class="type-signature"></span>DataFetcherCallback<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="global.html#PlainObject">PlainObject</a>|Promise}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>A data fetcher callback should fetch the data for a given data source, and
+return it in the form of a plain object that can be serialised to a JSON
+string.</p>
+<p>The data fetched should be formatted as a single JavaScript value that can be
+serialised to a JSON string without error. The callback can return the data
+directly, or, return a promise of that data.</p>
+<p>The fetcher function can accept arbitrarily many parameters.</p>
+<p>When invoked by the databridge, the special <code>this</code> variable within the
+callback will be mapped to the Datasource object
+the callback belongs to.</p>
+</div>
 
 
 
@@ -112,6 +416,283 @@
 
 
 
+
+    <h5>This:</h5>
+    <ul><li>Datasource</li></ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="section-returns">
+<h5>Returns:</h5>
+
+        
+
+<dl class="param-type">
+    <dt>
+        Type:
+    </dt>
+    <dd>
+        
+<span class="param-type"><code><a href="global.html#PlainObject">PlainObject</a></code></span>
+|
+
+<span class="param-type"><code>Promise</code></span>
+
+
+    </dd>
+</dl>
+
+
+<div class="param-desc">
+    <p>must return a plain object that can be
+serialised as a JSON string, or, a promise that resolves to same.</p>
+</div>
+
+    
+</div>
+
+
+
+</div>
+            
+                
+<div class="section-members">
+<h4 class="name" id="ISO8601"><span class="icon type-jsdoc">T</span>ISO8601</h4>
+
+
+
+
+<div class="description">
+    <p>A valid ISO8601 date string.</p>
+</div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li><a href="https://en.wikipedia.org/wiki/ISO_8601">https://en.wikipedia.org/wiki/ISO_8601</a></li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type"><code>string</code></span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+</div>
+
+            
+                
+<div class="section-members">
+<h4 class="name" id="PlainObject"><span class="icon type-jsdoc">T</span>PlainObject</h4>
+
+
+
+
+<div class="description">
+    <p>A JavaScript plain object as per the
+isPlainObject() function from validateParams.</p>
+</div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type"><code>Object</code></span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+</div>
+
+            
+                
+<div class="section-method">
+
+    
+
+    <h4 class="name" id="StreamNameGenerator"><span class="icon type-jsdoc">F</span><span class="type-signature"></span>StreamNameGenerator<span class="signature">(fetcherParams, fetchOptions)</span><span class="type-signature"> &rarr; {<a href="global.html#DatabridgeName">DatabridgeName</a>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>A stream name generator callback should convert a list of parpameters for
+a data fetcher into a unique stream name. This is vital to ensure caching
+behaves as expected with data fetchers which will be called with varying
+parameter values.</p>
+<p>For exmaple, imagine we have a data fetcher that gets a list of movies
+released in a given year, and the year is passed as the only argument to the
+data fetcher. A separate cache needs to be created for each year, and that
+separation is achieved with the stream name.</p>
+<p>If you don't specify your own stream name, or stream name generator, the
+module use the default stream name generator
+Datasource.defaultStreamNameGenerator()
+which will do the right thing most of the time.</p>
+</div>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li>Datasource.defaultStreamNameGenerator</li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+    <h5>This:</h5>
+    <ul><li>Datasource</li></ul>
 
 
 
@@ -140,115 +721,6 @@
 
         <tr>
             
-                <td class="name"><code>bridge</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><code>Databridge</code></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">
-                <p>a reference to the databridge the request
-was submitted to.</p>
-                
-            </td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>source</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><code>Datasource</code></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">
-                <p>the datasource the request was
-submitted on.</p>
-                
-            </td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>fetchOptions</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><code>Object</code></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">
-                <p>the options passed to the databridge when
-initiating the request.</p>
-                
-            </td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>fetcherPath</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><code>Array.&lt;<a href="global.html#DatabridgeName">DatabridgeName</a>></code></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">
-                <p>the path to the fetcher function
-within the datasource. Should be an empty array for datasources with
-just one data fetcher.</p>
-                
-            </td>
-        </tr>
-
-    
-
-        <tr>
-            
                 <td class="name"><code>fetcherParams</code></td>
             
 
@@ -266,7 +738,8 @@ just one data fetcher.</p>
             
 
             <td class="description last">
-                <p>the parameters for the fetcher function.</p>
+                <p>the parameters being passed to the data
+fetcher.</p>
                 
             </td>
         </tr>
@@ -275,13 +748,13 @@ just one data fetcher.</p>
 
         <tr>
             
-                <td class="name"><code>timestamp</code></td>
+                <td class="name"><code>fetchOptions</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><code><a href="global.html#ISO8601">ISO8601</a></code></span>
+<span class="param-type"><code><a href="global.html#PlainObject">PlainObject</a></code></span>
 
 
             
@@ -292,8 +765,8 @@ just one data fetcher.</p>
             
 
             <td class="description last">
-                <p>the time the request was submitted to the
-databridge at as an ISO8601 string.</p>
+                <p>the options passed to the
+databridge's fetch function.</p>
                 
             </td>
         </tr>
@@ -315,437 +788,6 @@ databridge at as an ISO8601 string.</p>
 
 
 
-
-
-</div>
-    
-    </div>
-
-    
-
-    
-
-    
-
-     
-
-    
-
-    
-        <h3 class="subsection-title">Members</h3>
-
-        
-            
-<div class="section-members">
-<h4 class="name" id="bridge"><span class="icon type-member">V</span><span class="type-signature"></span>bridge<span class="type-signature"></span></h4>
-
-
-
-
-<div class="description">
-    <p>An alias for <code>.databridge()</code>.</p>
-</div>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li>{FetchRequest#databridge}</li>
-        </ul>
-    </dd>
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-</div>
-
-        
-            
-<div class="section-members">
-<h4 class="name" id="options"><span class="icon type-member">V</span><span class="type-signature"></span>options<span class="type-signature"></span></h4>
-
-
-
-
-<div class="description">
-    <p>An alias for <code>.fetchOptions()</code>.</p>
-</div>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li>{FetchRequest#fetchOptions}</li>
-        </ul>
-    </dd>
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-</div>
-
-        
-            
-<div class="section-members">
-<h4 class="name" id="params"><span class="icon type-member">V</span><span class="type-signature"></span>params<span class="type-signature"></span></h4>
-
-
-
-
-<div class="description">
-    <p>An alias for <code>.fetcherParams()</code>.</p>
-</div>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li>{FetchRequest#fetcherParams}</li>
-        </ul>
-    </dd>
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-</div>
-
-        
-            
-<div class="section-members">
-<h4 class="name" id="path"><span class="icon type-member">V</span><span class="type-signature"></span>path<span class="type-signature"></span></h4>
-
-
-
-
-<div class="description">
-    <p>An alias for <code>.fetcherPath()</code>.</p>
-</div>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li>{FetchRequest#fetcherPath}</li>
-        </ul>
-    </dd>
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-</div>
-
-        
-            
-<div class="section-members">
-<h4 class="name" id="source"><span class="icon type-member">V</span><span class="type-signature"></span>source<span class="type-signature"></span></h4>
-
-
-
-
-<div class="description">
-    <p>An alias for <code>.datasource()</code>.</p>
-</div>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li>{FetchRequest#datasource}</li>
-        </ul>
-    </dd>
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-</div>
-
-        
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
-        
-            
-<div class="section-method">
-
-    
-
-    <h4 class="name" id="databridge"><span class="icon type-function">F</span><span class="type-signature"></span>databridge<span class="signature">()</span><span class="type-signature"> &rarr; {Databridge}</span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>A read-only accessor for a reference to the databridge the request was
-submitted to.</p>
-</div>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <div class="section-returns">
 <h5>Returns:</h5>
 
@@ -757,12 +799,16 @@ submitted to.</p>
     </dt>
     <dd>
         
-<span class="param-type"><code>Databridge</code></span>
+<span class="param-type"><code><a href="global.html#DatabridgeName">DatabridgeName</a></code></span>
 
 
     </dd>
 </dl>
 
+
+<div class="param-desc">
+    <p>A valid stream name.</p>
+</div>
 
     
 </div>
@@ -770,509 +816,7 @@ submitted to.</p>
 
 
 </div>
-        
             
-<div class="section-method">
-
-    
-
-    <h4 class="name" id="datasource"><span class="icon type-function">F</span><span class="type-signature"></span>datasource<span class="signature">()</span><span class="type-signature"> &rarr; {Datasource}</span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>A read-only accessor for a reference to the datasource the request was
-submitted to.</p>
-</div>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="section-returns">
-<h5>Returns:</h5>
-
-        
-
-<dl class="param-type">
-    <dt>
-        Type:
-    </dt>
-    <dd>
-        
-<span class="param-type"><code>Datasource</code></span>
-
-
-    </dd>
-</dl>
-
-
-    
-</div>
-
-
-
-</div>
-        
-            
-<div class="section-method">
-
-    
-
-    <h4 class="name" id="fetcherParams"><span class="icon type-function">F</span><span class="type-signature"></span>fetcherParams<span class="signature">()</span><span class="type-signature"> &rarr; {Array}</span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>A read-only accessor for a reference to the parameters passed to the
-data fetcher callback.</p>
-</div>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="section-returns">
-<h5>Returns:</h5>
-
-        
-
-<dl class="param-type">
-    <dt>
-        Type:
-    </dt>
-    <dd>
-        
-<span class="param-type"><code>Array</code></span>
-
-
-    </dd>
-</dl>
-
-
-    
-</div>
-
-
-
-</div>
-        
-            
-<div class="section-method">
-
-    
-
-    <h4 class="name" id="fetcherPath"><span class="icon type-function">F</span><span class="type-signature"></span>fetcherPath<span class="signature">()</span><span class="type-signature"> &rarr; {Array}</span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>A read-only accessor for a reference to the data fethcher path within
-the datasource for use within this request.</p>
-</div>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="section-returns">
-<h5>Returns:</h5>
-
-        
-
-<dl class="param-type">
-    <dt>
-        Type:
-    </dt>
-    <dd>
-        
-<span class="param-type"><code>Array</code></span>
-
-
-    </dd>
-</dl>
-
-
-    
-</div>
-
-
-
-</div>
-        
-            
-<div class="section-method">
-
-    
-
-    <h4 class="name" id="fetchOptions"><span class="icon type-function">F</span><span class="type-signature"></span>fetchOptions<span class="signature">()</span><span class="type-signature"> &rarr; {Object}</span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>A read-only accessor for a reference to the options passed to the
-databridge's fetch function.</p>
-</div>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="section-returns">
-<h5>Returns:</h5>
-
-        
-
-<dl class="param-type">
-    <dt>
-        Type:
-    </dt>
-    <dd>
-        
-<span class="param-type"><code>Object</code></span>
-
-
-    </dd>
-</dl>
-
-
-    
-</div>
-
-
-
-</div>
-        
-            
-<div class="section-method">
-
-    
-
-    <h4 class="name" id="timestamp"><span class="icon type-function">F</span><span class="type-signature"></span>timestamp<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="global.html#ISO8601">ISO8601</a>}</span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>A read-only accessor for the time the request was made at as an ISO8601
-string.</p>
-</div>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="section-returns">
-<h5>Returns:</h5>
-
-        
-
-<dl class="param-type">
-    <dt>
-        Type:
-    </dt>
-    <dd>
-        
-<span class="param-type"><code><a href="global.html#ISO8601">ISO8601</a></code></span>
-
-
-    </dd>
-</dl>
-
-
-    
-</div>
-
-
-
-</div>
-        
-    
-
     
 
     

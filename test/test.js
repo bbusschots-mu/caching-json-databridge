@@ -171,9 +171,10 @@ function dummyBasicTypesExcept(){
 
 QUnit.module('custom validators', {}, function(){
     QUnit.test('custom validators registered', function(a){
-        a.expect(2);
+        a.expect(3);
         a.strictEqual(typeof validate.validators.folderExists, 'function', 'folderExists is registered');
         a.strictEqual(typeof validate.validators.iso8601, 'function', 'iso8601 is registered');
+		a.strictEqual(typeof validate.validators.dataFetcher, 'function', 'dataFetcher is registered');
     });
     
     QUnit.test('the folderExists validator', function(a){
@@ -200,6 +201,33 @@ QUnit.module('custom validators', {}, function(){
     //    a.ok(!validate.isDefined(validate.validators.promise(Promise.resolve(true), true)), 'a resolved promise passes');
     //    a.ok(!validate.isDefined(validate.validators.promise(Promise.reject(new Error('test')), true)), 'a rejected promise passes');
     //});
+	
+	QUnit.test('the namePath validator', function(a){
+        a.expect(8);
+        a.strictEqual(typeof validate.validators.namePath(undefined, true), 'undefined', 'undefined passes');
+        a.ok(!validate.isDefined(validate.validators.namePath('', true)), 'an empty string passes');
+		a.ok(!validate.isDefined(validate.validators.namePath('df1', true)), 'a valid name as a string passes');
+		a.ok(!validate.isDefined(validate.validators.namePath(['df1'], true)), 'a valid name as an array containing a single string passes');
+		a.ok(!validate.isDefined(validate.validators.namePath(['df1', 'df1a'], true)), 'an array of two valid names as strings passes');
+		a.ok(validate.isString(validate.validators.namePath(new Date(), true)), 'a prototyped object returns an error message');
+		a.ok(validate.isString(validate.validators.namePath([], true)), 'an empty array returns an error message');
+		a.ok(validate.isString(validate.validators.namePath([new Date()], true)), 'an array containing a non-string returns an error message');
+    });
+	
+	QUnit.test('the dataFetcher validator', function(a){
+        a.expect(11);
+        a.strictEqual(typeof validate.validators.dataFetcher(undefined, true), 'undefined', 'undefined passes');
+        a.ok(!validate.isDefined(validate.validators.dataFetcher(function(){}, true)), 'a callback passes');
+		a.ok(!validate.isDefined(validate.validators.dataFetcher({}, true)), 'an empty plain object passes');
+		a.ok(!validate.isDefined(validate.validators.dataFetcher({main: function(){}}, true)), 'a plain object defining a single callback passes');
+		a.ok(!validate.isDefined(validate.validators.dataFetcher({main: function(){}, math: {add: function(){}}}, true)), 'a nested plain object defining multiple callbacks passes');
+		a.ok(validate.isString(validate.validators.dataFetcher('thingys', true)), 'a string returns an error message');
+		a.ok(validate.isString(validate.validators.dataFetcher(new Date(), true)), 'a prototyped object returns an error message');
+		a.ok(validate.isString(validate.validators.dataFetcher({'thingys-whatsists': function(){}}, true)), 'a plain object with an invalid key returns an error message');
+		a.ok(validate.isString(validate.validators.dataFetcher({thingys: {'whatsits-thing': function(){}}}, true)), 'a plain object with a nested invalid key returns an error message');
+		a.ok(validate.isString(validate.validators.dataFetcher({thingys: 'whatsists'}, true)), 'a plain object with an invalid value returns an error message');
+		a.ok(validate.isString(validate.validators.dataFetcher({thingys: {whatsists: 'stuff'}}, true)), 'a plain object with a nested invalid value returns an error message');
+    });
 });
 
 QUnit.module('The Databridge class', {}, function(){
@@ -210,7 +238,7 @@ QUnit.module('The Databridge class', {}, function(){
     QUnit.module('constructor', {}, function(){
         QUnit.test('building default object', function(a){
             a.expect(3);
-            var db = new cjdb.Databridge();
+            let db = new cjdb.Databridge();
             a.ok(db instanceof cjdb.Databridge, 'object successfully constructed without args');
             a.strictEqual(db._options.cacheDir, path.join('.', CACHEDIR_NAME), 'cache dir defaulted to expected value');
             a.strictEqual(db._options.defaultCacheTTL, 3600, 'default cache TTL defaulted to expected value');
@@ -218,9 +246,9 @@ QUnit.module('The Databridge class', {}, function(){
         
         QUnit.test('specified options correctly stored', function(a){
             a.expect(2);
-            var testPath = './';
-            var testTTL = 300;
-            var db = new cjdb.Databridge({cacheDir: testPath, defaultCacheTTL: testTTL});
+            let testPath = './';
+            let testTTL = 300;
+            let db = new cjdb.Databridge({cacheDir: testPath, defaultCacheTTL: testTTL});
             a.strictEqual(db._options.cacheDir, testPath, 'cache dir correctly stored');
             a.strictEqual(db._options.defaultCacheTTL, testTTL, 'default cache TTL correctly stored');
         });
@@ -258,7 +286,7 @@ QUnit.module('The Databridge class', {}, function(){
         {
             beforeEach: function(){
                 this.db = new cjdb.Databridge({ cacheDir: './' });
-                this.ds = new cjdb.Datasource('testDS', function(){ return true; });
+                this.ds = new cjdb.Datasource(function(){ return true; });
             }
         },
         function(){
@@ -272,17 +300,17 @@ QUnit.module('The Databridge class', {}, function(){
             
             QUnit.test('name clashes prevented on registration', function(a){
                 a.expect(2);
-                this.db.registerDatasource(this.ds);
+                this.db.registerDatasource('testDS', this.ds);
                 a.throws(
                     function(){
-                        this.db.registerDatasource(new cjdb.Datasource('testDS', function(){}));
+                        this.db.registerDatasource('testDS', new cjdb.Datasource(function(){}));
                     },
                     Error,
                     'clashing datasource name rejected'
                 );
                 a.throws(
                     function(){
-                        this.db.registerDatasource(new cjdb.Datasource('option', function(){}));
+                        this.db.registerDatasource('option', new cjdb.Datasource(function(){}));
                     },
                     Error,
                     'datasource name that clashes with instance method name rejected'
@@ -290,15 +318,14 @@ QUnit.module('The Databridge class', {}, function(){
             });
             
             QUnit.test('function chanining supported by registration function', function(a){
-                a.strictEqual(this.db.registerDatasource(this.ds), this.db);
+                a.strictEqual(this.db.registerDatasource('testDS', this.ds), this.db);
             });
             
             QUnit.test('source correctly registered & fetched', function(a){
-                a.expect(3);
-                this.db.registerDatasource(this.ds);
-                a.strictEqual(this.db._datasources[this.ds.name()], this.ds, 'datasource saved in ._datasources property with correct name');
-                a.strictEqual(typeof this.db[this.ds.name()], 'function', 'shortcut function added for datasource');
-                a.strictEqual(this.db.datasource(this.ds.name()), this.ds, 'datasource retrieved with .datasource() accessor');
+                a.expect(2);
+                this.db.registerDatasource('testDS', this.ds);
+                a.strictEqual(this.db._datasources.testDS, this.ds, 'datasource saved in ._datasources property with correct name');
+                a.strictEqual(this.db.datasource('testDS'), this.ds, 'datasource retrieved with .datasource() accessor');
             });
             
             QUnit.test('.datasource() returns undefined for unregistered sources', function(a){
@@ -308,6 +335,35 @@ QUnit.module('The Databridge class', {}, function(){
             QUnit.test('.source() is a shortcut to .datasource()', function(a){
                 a.strictEqual(this.db.source, this.db.datasource);
             });
+			
+			QUnit.module('creation of shortcut functions', {}, function(){
+				QUnit.test('the single-data-fetcher case', function(a){
+					a.expect(1);
+					let db = new cjdb.Databridge({ cacheDir: './' });
+					let ds = new cjdb.Datasource(function(){ return true; });
+					db.register('testDS', ds);
+					a.ok(validate.isFunction(db.testDS));
+				});
+				
+				QUnit.test('the flat multiple fetcher case', function(a){
+					a.expect(2);
+					let db = new cjdb.Databridge({ cacheDir: './' });
+					let ds = new cjdb.Datasource({ cb1: function(){ return true; }, cb2: function(){ return false; } });
+					db.register('testDS', ds);
+					a.ok(validateParams.isPlainObject(db.testDS), 'top-level shortcut is a plain object');
+					a.ok(validate.isFunction(db.testDS.cb1), 'second-level shortcut is a function');
+				});
+				
+				QUnit.test('the nested multiple fetcher case', function(a){
+					a.expect(3);
+					let db = new cjdb.Databridge({ cacheDir: './' });
+					let ds = new cjdb.Datasource({ cb1: { cb1a: function(){ return true; }, cb1b: function(){ return false; } } });
+					db.register('testDS', ds);
+					a.ok(validateParams.isPlainObject(db.testDS), 'top-level shortcut is a plain object');
+					a.ok(validateParams.isPlainObject(db.testDS.cb1), 'second-level shortcut is a plain object');
+					a.ok(validate.isFunction(db.testDS.cb1.cb1a), 'third-level shortcut is a function');
+				});
+			});
         }
     );
     
@@ -318,8 +374,8 @@ QUnit.module('The Databridge class', {}, function(){
                 let dummyData = ['thingys', 'whatsitis'];
                 this.dummyData = dummyData;
                 this.dsName = 'testDS';
-                this.ds = new cjdb.Datasource(this.dsName, function(){ return dummyData; }, {enableCaching: false});
-                this.db.registerDatasource(this.ds);
+                this.ds = new cjdb.Datasource(function(){ return dummyData; }, {enableCaching: false});
+                this.db.registerDatasource(this.dsName, this.ds);
             }
         },
         function(){
@@ -382,8 +438,8 @@ QUnit.module('The Databridge class', {}, function(){
                 a.expect(7);
                 
                 var dummyData = this.dummyData;
-                var cachingDS = new cjdb.Datasource('testCachingDS', function(){ return dummyData; });
-                this.db.register(cachingDS);
+                var cachingDS = new cjdb.Datasource(function(){ return dummyData; });
+                this.db.register('testCachingDS', cachingDS);
                 var done = a.async();
                 
                 var fr = this.db.fetchResponse('testCachingDS', {}, []);
@@ -409,15 +465,15 @@ QUnit.module('The Databridge class', {}, function(){
                 }
             });
             
-            QUnit.test('cache reading & bypassing', function(a){
+            QUnit.test('cache reading & bypassing - single data fetcher', function(a){
                 a.expect(10);
                 
                 // prep the data source
                 let db = this.db;
                 let dummyData = this.dummyData;
                 let dsName = 'cacheTest' + moment().unix(); // make sure it's unique each time
-                let cachingDS = new cjdb.Datasource(dsName, function(){ return dummyData; });
-                db.register(cachingDS);
+                let cachingDS = new cjdb.Datasource(function(){ return dummyData; });
+                db.register(dsName, cachingDS);
                 
                 // start async mode
                 let done = a.async();
@@ -483,6 +539,183 @@ QUnit.module('The Databridge class', {}, function(){
                     done();
                 }
             });
+			
+			QUnit.test('caching - datasource with multiple data fetchers', function(a){
+				a.expect(8);
+                
+                // prep the data source
+                let db = this.db;
+                let dummyData = this.dummyData;
+                let dsName = 'nestedCacheTest' + moment().unix(); // make sure it's unique each time
+                let cachingDS = new cjdb.Datasource({ fnSet1: { fn1: function(){ return dummyData; } } });
+                db.register(dsName, cachingDS);
+                
+                // start async mode
+                let done = a.async();
+                
+                // fetch the data from the source once bypassing the cache so a fresh copy can be written to the cache
+                let fr1 = db.fetchResponse([dsName, 'fnSet1', 'fn1'], { bypassCache: true }, []);
+				if(validate.isPromise(fr1.dataPromise())){
+					fr1.dataPromise().then(
+                        function(){
+							// check the cache was written OK
+                            a.ok(validateParams.isPlainObject(fr1.meta('cacheWrite')), 'data cached in prep for test retrieval');
+                            let cachePath = fr1.meta('cacheWrite').path;
+                            a.ok(validate.isString(cachePath) && !validate.isEmpty(cachePath), 'cache path included in response meta');
+                            a.ok(fs.existsSync(cachePath), 'cache file exists on disk');
+                            
+                            // make a second call to try retrieve the data from the cache
+                            let fr2 = db.fetchResponse([dsName, 'fnSet1', 'fn1'], {}, []);
+							if(validate.isPromise(fr2.dataPromise())){
+                                fr2.dataPromise().then(
+                                    function(data){
+										a.ok(validateParams.isPlainObject(fr2.meta('cacheRead')), 'data read from cache');
+                                        a.ok(validate.isString(fr2.meta('cacheRead').path), 'cacheRead.path metadata is a string');
+                                        a.ok(fs.existsSync(fr2.meta('cacheRead').path), 'cacheRead.path points to a file that exists on disk');
+                                        a.notOk(validate.single(fr2.meta('cacheRead').timestamp, { presence: true, iso8601: true }),'cacheRead.timestamp metadata is an ISO8601 string');
+                                        a.deepEqual(data, dummyData, 'correct data read from cache');
+										done();
+									},
+                                    function(err){
+                                        console.error('data promise in second call rejected with error', err);
+                                        done();
+                                    }
+                                );
+							}else{
+                                console.error('second call did not return a data promise');
+                                done();
+                            }
+						},
+						function(err){
+                            console.error('data promise in first call rejected with error', err);
+                            done();
+                        }
+					);
+				}else{
+                    console.error('first call did not return a data promise');
+                    done();
+                }
+			});
+			
+			QUnit.test('caching - datafetcher with parameter', function(a){
+				a.expect(9);
+                
+                // prep the data source
+                let db = this.db;
+                let dsName = 'paramCacheTest' + moment().unix(); // make sure it's unique each time
+                let cachingDS = new cjdb.Datasource(function(n){ return 'I got ' + n; });
+				let fParam = 42;
+                db.register(dsName, cachingDS);
+                
+                // start async mode
+                let done = a.async();
+                
+                // fetch the data from the source once bypassing the cache so a fresh copy can be written to the cache
+                let fr1 = db.fetchResponse(dsName, { bypassCache: true }, [fParam]);
+				a.strictEqual(fr1.meta('streamName'), 'n_42', 'correct stream name used');
+				if(validate.isPromise(fr1.dataPromise())){
+					fr1.dataPromise().then(
+                        function(){
+							// check the cache was written OK
+                            a.ok(validateParams.isPlainObject(fr1.meta('cacheWrite')), 'data cached in prep for test retrieval');
+                            let cachePath = fr1.meta('cacheWrite').path;
+                            a.ok(validate.isString(cachePath) && !validate.isEmpty(cachePath), 'cache path included in response meta');
+                            a.ok(fs.existsSync(cachePath), 'cache file exists on disk');
+                            
+                            // make a second call to try retrieve the data from the cache
+                            let fr2 = db.fetchResponse(dsName, {}, [fParam]);
+							if(validate.isPromise(fr2.dataPromise())){
+                                fr2.dataPromise().then(
+                                    function(data){
+										a.ok(validateParams.isPlainObject(fr2.meta('cacheRead')), 'data read from cache');
+                                        a.ok(validate.isString(fr2.meta('cacheRead').path), 'cacheRead.path metadata is a string');
+                                        a.ok(fs.existsSync(fr2.meta('cacheRead').path), 'cacheRead.path points to a file that exists on disk');
+                                        a.notOk(validate.single(fr2.meta('cacheRead').timestamp, { presence: true, iso8601: true }),'cacheRead.timestamp metadata is an ISO8601 string');
+                                        a.deepEqual(data, 'I got 42', 'correct data read from cache');
+										done();
+									},
+                                    function(err){
+                                        console.error('data promise in second call rejected with error', err);
+                                        done();
+                                    }
+                                );
+							}else{
+                                console.error('second call did not return a data promise');
+                                done();
+                            }
+						},
+						function(err){
+                            console.error('data promise in first call rejected with error', err);
+                            done();
+                        }
+					);
+				}else{
+                    console.error('first call did not return a data promise');
+                    done();
+                }
+			});
+			
+			QUnit.test('caching - datafetcher with custom stream name', function(a){
+				a.expect(9);
+                
+                // prep the data source
+                let db = this.db;
+                let dsName = 'snGenCacheTest' + moment().unix(); // make sure it's unique each time
+				let fetcher = function(n){ return 'I got ' + n; };
+				fetcher.streamNameGenerator = function(fParams){
+					return 'test_' + fParams[0];
+				};
+                let cachingDS = new cjdb.Datasource(fetcher);
+				let fParam = 42;
+                db.register(dsName, cachingDS);
+                
+                // start async mode
+                let done = a.async();
+                
+                // fetch the data from the source once bypassing the cache so a fresh copy can be written to the cache
+                let fr1 = db.fetchResponse(dsName, { bypassCache: true }, [fParam]);
+				a.strictEqual(fr1.meta('streamName'), 'test_42', 'correct stream name used');
+				if(validate.isPromise(fr1.dataPromise())){
+					fr1.dataPromise().then(
+                        function(){
+							// check the cache was written OK
+                            a.ok(validateParams.isPlainObject(fr1.meta('cacheWrite')), 'data cached in prep for test retrieval');
+                            let cachePath = fr1.meta('cacheWrite').path;
+                            a.ok(validate.isString(cachePath) && !validate.isEmpty(cachePath), 'cache path included in response meta');
+                            a.ok(fs.existsSync(cachePath), 'cache file exists on disk');
+                            
+                            // make a second call to try retrieve the data from the cache
+                            let fr2 = db.fetchResponse(dsName, {}, [fParam]);
+							if(validate.isPromise(fr2.dataPromise())){
+                                fr2.dataPromise().then(
+                                    function(data){
+										a.ok(validateParams.isPlainObject(fr2.meta('cacheRead')), 'data read from cache');
+                                        a.ok(validate.isString(fr2.meta('cacheRead').path), 'cacheRead.path metadata is a string');
+                                        a.ok(fs.existsSync(fr2.meta('cacheRead').path), 'cacheRead.path points to a file that exists on disk');
+                                        a.notOk(validate.single(fr2.meta('cacheRead').timestamp, { presence: true, iso8601: true }),'cacheRead.timestamp metadata is an ISO8601 string');
+                                        a.deepEqual(data, 'I got 42', 'correct data read from cache');
+										done();
+									},
+                                    function(err){
+                                        console.error('data promise in second call rejected with error', err);
+                                        done();
+                                    }
+                                );
+							}else{
+                                console.error('second call did not return a data promise');
+                                done();
+                            }
+						},
+						function(err){
+                            console.error('data promise in first call rejected with error', err);
+                            done();
+                        }
+					);
+				}else{
+                    console.error('first call did not return a data promise');
+                    done();
+                }
+			});
         }
     );
 });
@@ -493,73 +726,175 @@ QUnit.module('The Datasource class', {}, function(){
     });
     
     QUnit.module('constructor', {}, function(){
-        QUnit.test('required arguments & defaults', function(a){
-            a.expect(6);
-            a.throws(
-                function(){
-                    new cjdb.Datasource();
-                },
-                validateParams.ValidationError,
-                'throws error when no arguments are passed'
-            );
-            a.throws(
-                function(){
-                    new cjdb.Datasource('test');
-                },
-                validateParams.ValidationError,
-                'throws error when only a name is passed'
-            );
-            var defDS = new cjdb.Datasource('test', function(){});
-            a.ok(defDS, 'no error thrown when passed both a name and a callback but no options');
+        QUnit.test('defaults', function(a){
+            a.expect(5);
+            let defDS = new cjdb.Datasource();
+            a.ok(defDS, 'no error thrown when passed no parameters');
+			a.deepEqual(defDS._dataFetcher, {}, 'data fetcher defaults to empty plain object');
             a.strictEqual(defDS._options.enableCaching, true, 'caching enabled by default');
             a.strictEqual(typeof defDS._options.cacheTTL, 'undefined', 'no custom cache TTL set by default');
-            a.ok(new cjdb.Datasource('test', function(){}, {cacheTTL: 300}), 'no error thrown when passed both a name, a callback, and options');
+            a.ok(new cjdb.Datasource(function(){}, {cacheTTL: 300}), 'no error thrown when passed both a callback and options');
         });
         
         QUnit.test('data correctly stored', function(a){
-            a.expect(4);
-            var testName = 'test';
+            a.expect(3);
             var testFn = function(){ return true; };
             var testTTL = 500;
             var testCacheEnable = false;
-            var ds = new cjdb.Datasource(testName, testFn, {cacheTTL: testTTL, enableCaching: testCacheEnable});
-            a.strictEqual(ds._name, testName, 'name successfully stored');
+            var ds = new cjdb.Datasource(testFn, {cacheTTL: testTTL, enableCaching: testCacheEnable});
             a.strictEqual(ds._dataFetcher, testFn, 'data fether callback successfully stored');
             a.strictEqual(ds._options.enableCaching, testCacheEnable, 'cache enabling option successfully stored');
             a.strictEqual(ds._options.cacheTTL, testTTL, 'cache TTL option successfully stored');
         });
     });
+	
+	QUnit.module('read-only accessor .dataFetcher()', {}, function(){
+		QUnit.test('function exists', function(a){
+			a.expect(1);
+			let ds = new cjdb.Datasource(function(){});
+            a.ok(validate.isFunction(ds.dataFetcher));
+        });
+		
+		QUnit.module('single callback case',
+			{
+				beforeEach: function(){
+					this.df = function(){ return true; };
+					this.ds = new cjdb.Datasource(this.df, { enableCaching: false });
+				}
+			},
+			function(){
+				QUnit.test('returns expected value', function(a){
+					a.expect(2);
+					a.strictEqual(this.ds.dataFetcher(), this.df, 'expected value returned with no params');
+					a.strictEqual(this.ds.dataFetcher([]), this.df, 'expected value returned with empty array as first param');
+				});
+				
+				QUnit.test('throws Error when passed name path', function(a){
+					a.expect(4);
+					a.throws(
+						function(){ this.ds.dataFetcher('thingy'); },
+						Error,
+						'error on single string'
+					);
+					a.throws(
+						function(){ this.ds.dataFetcher('thingy', 'stuff'); },
+						Error,
+						'error on multiple strings'
+					);
+					a.throws(
+						function(){ this.ds.dataFetcher(['thingy']); },
+						Error,
+						'error on single string array'
+					);
+					a.throws(
+						function(){ this.ds.dataFetcher(['thingy', 'stuff']); },
+						Error,
+						'error on multiple string array'
+					);
+				});
+			}
+		);
+		
+		QUnit.module('flat multiple callbacks case',
+			{
+				beforeEach: function(){
+					this.dfCol = {
+						cb1: function(){ return true; },
+						cb2: function(){ return false; }
+					};
+					this.ds = new cjdb.Datasource(this.dfCol, { enableCaching: false });
+				}
+			},
+			function(){
+				QUnit.test('returns expected values', function(a){
+					a.expect(5);
+					a.strictEqual(this.ds.dataFetcher(), this.dfCol, 'returns entire datastructure when passed no params');
+					a.strictEqual(this.ds.dataFetcher('cb1'), this.dfCol.cb1, 'returns correct callback when passed single string');
+					a.strictEqual(this.ds.dataFetcher(['cb1']), this.dfCol.cb1, 'returns correct callback when passed array contianing single string');
+					a.throws(
+						() => this.ds.dataFetcher('cb3'),
+						Error,
+						'throws error when passed name that does not map to a callback as single string'
+					);
+					a.throws(
+						() => this.ds.dataFetcher(['cb3']),
+						Error,
+						'throws error when passed name that does not map to a callback as array containing single string'
+					);
+				});
+			}
+		);
+		
+		QUnit.module('nested multiple callbacks case',
+			{
+				beforeEach: function(){
+					this.dfCol = {
+						cb1: {
+							cb1a: function(){ return true; },
+							cb1b: function(){ return null; }
+						},
+						cb2: function(){ return false; }
+					};
+					this.ds = new cjdb.Datasource(this.dfCol, { enableCaching: false });
+				}
+			},
+			function(){
+				QUnit.test('returns expected values', function(a){
+					a.expect(9);
+					a.strictEqual(this.ds.dataFetcher(), this.dfCol, 'returns entire datastructure when passed no params');
+					a.strictEqual(this.ds.dataFetcher('cb1'), this.dfCol.cb1, 'returns correct sub-data-structure when passed single string');
+					a.strictEqual(this.ds.dataFetcher(['cb1']), this.dfCol.cb1, 'returns correct sub-data-structure when passed array contianing single string');
+					a.strictEqual(this.ds.dataFetcher('cb1', 'cb1a'), this.dfCol.cb1.cb1a, 'returns correct callback when passed two strings');
+					a.strictEqual(this.ds.dataFetcher(['cb1', 'cb1a']), this.dfCol.cb1.cb1a, 'returns correct callback when passed array contianing two strings');
+					a.throws(
+						() => this.ds.dataFetcher('cb3'),
+						Error,
+						'throws error when passed name that does not map to a callback at the top level as a single string'
+					);
+					a.throws(
+						() => this.ds.dataFetcher(['cb3']),
+						Error,
+						'throws error when passed name that does not map to a callback at the top level as array containing single string'
+					);
+					a.throws(
+						() => this.ds.dataFetcher('cb1', 'cb1c'),
+						Error,
+						'throws error when passed name that does not map to a callback at the second level as a single string'
+					);
+					a.throws(
+						() => this.ds.dataFetcher(['cb1', 'cb1c']),
+						Error,
+						'throws error when passed name that does not map to a callback at the second level as array containing single string'
+					);
+				});
+			}
+		);
+	});
+	
+	QUnit.test('.hasSingleDataFetcher() utility function', function(a){
+		a.expect(3);
+		let ds1 = new cjdb.Datasource(function(){});
+		a.ok(validate.isFunction(ds1.hasSingleDataFetcher), 'function exists');
+		a.strictEqual(ds1.hasSingleDataFetcher(), true, 'returns true on datasource with single data fetcher');
+		let ds2 = new cjdb.Datasource({ cb1: function(){}, cb2: function(){} });
+		a.strictEqual(ds2.hasSingleDataFetcher(), false, 'returns false on datasource with multiple data fetchers');
+	});
     
     QUnit.module(
-        'read-only accessors',
+        'read-only accessor .option()',
         {
             beforeEach: function(){
                 this.df = function(){ return true; };
-                this.ds = new cjdb.Datasource('test', this.df, { enableCaching: true, cacheTTL: 300 });
+                this.ds = new cjdb.Datasource(this.df, { enableCaching: true, cacheTTL: 300 });
             }
         },
         function(){
-            QUnit.test('.name() exists', function(a){
-                a.ok(validate.isFunction(this.ds.name));
-            });
             
-            QUnit.test('.name() returns expected value', function(a){
-                a.strictEqual(this.ds.name(), 'test');
-            });
-            
-            QUnit.test('.dataFetcher() exists', function(a){
-                a.ok(validate.isFunction(this.ds.dataFetcher));
-            });
-            
-            QUnit.test('.dataFetcher() returns expected value', function(a){
-                a.strictEqual(this.ds.dataFetcher(), this.df);
-            });
-            
-            QUnit.test('.option() exists', function(a){
+            QUnit.test('function exists', function(a){
                 a.ok(validate.isFunction(this.ds.option));
             });
             
-            QUnit.test('.option() returns expected values', function(a){
+            QUnit.test('returns expected values', function(a){
                 a.expect(2);
                 a.strictEqual(this.ds.option('cacheTTL'), 300, 'expected value returned for defined option');
                 a.strictEqual(typeof this.ds.option('thingy'), 'undefined', 'undefined returned for un-specified option');
@@ -572,7 +907,7 @@ QUnit.module('The Datasource class', {}, function(){
         
         //var db = new Databridge();
         var dummyData = { a: 'b', c: 'd' };
-        var ds = new cjdb.Datasource('testDS', function(){ return dummyData; });
+        var ds = new cjdb.Datasource(function(){ return dummyData; });
         var done = a.async();
         var dp = ds.fetchDataPromise();
         dp.then(
@@ -585,6 +920,20 @@ QUnit.module('The Datasource class', {}, function(){
             }
         );
     });
+	
+	QUnit.test('defaultStreamNameGenerator() static function', function(a){
+		a.expect(10);
+		a.ok(validate.isFunction(cjdb.Datasource.defaultStreamNameGenerator), 'function exists');
+		a.strictEqual(cjdb.Datasource.defaultStreamNameGenerator(), 'main', "calling with no params returns 'main'");
+		a.strictEqual(cjdb.Datasource.defaultStreamNameGenerator([true]), 'true', "calling with single boolean true returns 'true'");
+		a.strictEqual(cjdb.Datasource.defaultStreamNameGenerator([false]), 'false', "calling with single boolean false returns 'false'");
+		a.strictEqual(cjdb.Datasource.defaultStreamNameGenerator([42]), 'n_42', "calling with single number without -, ., or e returns number pre-fixed with 'n_'");
+		a.strictEqual(cjdb.Datasource.defaultStreamNameGenerator([-42.6]), 'n_96e1a1514a86153f31480dc745808772', "calling with single number with a -, ., or e returns the MD5 of the number as a string pre-fixed with 'n_'");
+		a.strictEqual(cjdb.Datasource.defaultStreamNameGenerator(['boogers']), 's_boogers', "calling with single string that is a valid name returns the string prefixed with 's_'");
+		a.strictEqual(cjdb.Datasource.defaultStreamNameGenerator(['$']), 's_c3e97dd6e97fb5125688c97f36720cbe', "calling with single string that's not a valid name returns the MD5 hash of the string prefixed with 's_'");
+		a.strictEqual(cjdb.Datasource.defaultStreamNameGenerator([{a: 'b'}]), 'o_92eff9dda44cb8003ee13990782580ff', "calling with single plain object returns the MD5 hash of the JSON version of object prefixed with 'o_'");
+		a.strictEqual(cjdb.Datasource.defaultStreamNameGenerator(['thingys', 42]), 'p2_aed9d8d35ce236895dbdd1e061a5f369', "calling with multiple values returns the MD5 hash of the JSON version of all params pre-fixed with 'pN_' where N is num params");
+	});
 });
 
 QUnit.module('The FetchRequest class', {}, function(){
@@ -594,9 +943,9 @@ QUnit.module('The FetchRequest class', {}, function(){
     
     QUnit.module('constructor', {}, function(){
         QUnit.test('required arguments', function(a){
-            a.expect(6);
+            a.expect(7);
             var db = new cjdb.Databridge();
-            var ds = new cjdb.Datasource('testDS', function(){ return true; });
+            var ds = new cjdb.Datasource(function(){ return true; });
             a.throws(
                 function(){
                     new cjdb.FetchRequest();
@@ -630,23 +979,32 @@ QUnit.module('The FetchRequest class', {}, function(){
                     new cjdb.FetchRequest(db, ds, {}, []);
                 },
                 validateParams.ValidationError,
-                'throws error when only a bridge, source, options, and params are passed'
+                'throws error when only a bridge, source, options, and path are passed'
             );
-            a.ok(new cjdb.FetchRequest(db, ds, {}, [], moment().toISOString()), 'no error thrown when passed all params');
+			a.throws(
+                function(){
+                    new cjdb.FetchRequest(db, ds, {}, [], []);
+                },
+                validateParams.ValidationError,
+                'throws error when only a bridge, source, options, path, and params are passed'
+            );
+            a.ok(new cjdb.FetchRequest(db, ds, {}, [], [], moment().toISOString()), 'no error thrown when passed all params');
         });
         
         QUnit.test('data correctly stored', function(a){
-            a.expect(5);
+            a.expect(6);
             var db = new cjdb.Databridge();
-            var ds = new cjdb.Datasource('testDS', function(){ return true; });
+            var ds = new cjdb.Datasource(function(){ return true; });
             var opts = { enableCaching: true };
+			var path = [];
             var params = [true];
             var ts = moment().toISOString();
-            var fr = new cjdb.FetchRequest(db, ds, opts, params, ts);
+            var fr = new cjdb.FetchRequest(db, ds, opts, path, params, ts);
             a.strictEqual(fr._bridge, db, 'databridge successfully stored');
             a.strictEqual(fr._source, ds, 'datasource successfully stored');
             a.strictEqual(fr._fetchOptions, opts, 'fetch options successfully stored');
-            a.strictEqual(fr._fetcherParams, params, 'fetcher parans successfully stored');
+			a.strictEqual(fr._fetcherPath, path, 'fetcher path successfully stored');
+            a.strictEqual(fr._fetcherParams, params, 'fetcher params successfully stored');
             a.strictEqual(fr._timestamp, ts, 'timestamp successfully stored');
         });
     });
@@ -656,11 +1014,12 @@ QUnit.module('The FetchRequest class', {}, function(){
         {
             beforeEach: function(){
                 this.db = new cjdb.Databridge();
-                this.ds = new cjdb.Datasource('test', function(){ return true; });
+                this.ds = new cjdb.Datasource(function(){ return true; });
                 this.opts = { cacheTTL: 300 };
                 this.params = [true];
+				this.path = [];
                 this.ts = moment().toISOString();
-                this.fr = new cjdb.FetchRequest(this.db, this.ds, this.opts, this.params, this.ts);
+                this.fr = new cjdb.FetchRequest(this.db, this.ds, this.opts, this.path, this.params, this.ts);
             }
         },
         function(){
@@ -683,6 +1042,13 @@ QUnit.module('The FetchRequest class', {}, function(){
                 a.ok(validate.isFunction(this.fr.fetchOptions), '.fetchOptions() exists');
                 a.strictEqual(this.fr.fetchOptions(), this.opts, 'returns expected value');
                 a.strictEqual(this.fr.fetchOptions, this.fr.options, '.options() is alias for .fetchOptions()');
+            });
+			
+			QUnit.test('.fetcherPath() & .path()', function(a){
+                a.expect(3);
+                a.ok(validate.isFunction(this.fr.fetcherPath), '.fetcherPath() exists');
+                a.strictEqual(this.fr.fetcherPath(), this.path, 'returns expected value');
+                a.strictEqual(this.fr.fetcherPath, this.fr.path, '.path() is alias for .fetcherPath()');
             });
             
             QUnit.test('.fetcherParams() & .params()', function(a){
@@ -712,8 +1078,8 @@ QUnit.module('The FetchResponse class', {}, function(){
         QUnit.test('required arguments', function(a){
             a.expect(3);
             var db = new cjdb.Databridge();
-            var ds = new cjdb.Datasource('testDS', function(){ return true; });
-            var fr = new cjdb.FetchRequest(db, ds, {}, [], moment().toISOString());
+            var ds = new cjdb.Datasource(function(){ return true; });
+            var fr = new cjdb.FetchRequest(db, ds, {}, [], [], moment().toISOString());
             a.throws(
                 function(){
                     new cjdb.FetchResponse();
@@ -728,8 +1094,8 @@ QUnit.module('The FetchResponse class', {}, function(){
         QUnit.test('data correctly stored', function(a){
             a.expect(2);
             var db = new cjdb.Databridge();
-            var ds = new cjdb.Datasource('testDS', function(){ return true; });
-            var freq = new cjdb.FetchRequest(db, ds, {}, [], moment().toISOString());
+            var ds = new cjdb.Datasource(function(){ return true; });
+            var freq = new cjdb.FetchRequest(db, ds, {}, [], [], moment().toISOString());
             var m = {};
             var fres = new cjdb.FetchResponse(freq, m);
             a.strictEqual(fres._request, freq, 'request successfully stored');
@@ -742,8 +1108,8 @@ QUnit.module('The FetchResponse class', {}, function(){
         {
             beforeEach: function(){
                 this.db = new cjdb.Databridge();
-                this.ds = new cjdb.Datasource('test', function(){ return true; });
-                this.freq = new cjdb.FetchRequest(this.db, this.ds, {}, [], moment().toISOString());
+                this.ds = new cjdb.Datasource(function(){ return true; });
+                this.freq = new cjdb.FetchRequest(this.db, this.ds, {}, [], [], moment().toISOString());
                 this.m = { a: 'b' };
                 this.fres = new cjdb.FetchResponse(this.freq, this.m);
             }

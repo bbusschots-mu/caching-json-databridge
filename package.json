@@ -1,6 +1,6 @@
 {
   "name": "@maynoothuniversity/caching-json-databridge",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A caching data bridge for NodeJS",
   "main": "lib/cjdb.js",
   "scripts": {

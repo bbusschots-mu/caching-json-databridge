@@ -67,3 +67,7 @@ myDB.daysOfTheWeek().then(function(data){
     console.log(data);
 });
 ```
+
+## API Documentation
+
+* https://bbusschots-mu.github.io/caching-json-databridge/

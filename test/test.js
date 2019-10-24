@@ -241,7 +241,7 @@ QUnit.module('The Databridge class', {}, function(){
             let db = new cjdb.Databridge();
             a.ok(db instanceof cjdb.Databridge, 'object successfully constructed without args');
             a.strictEqual(db._options.cacheDir, path.join('.', CACHEDIR_NAME), 'cache dir defaulted to expected value');
-            a.strictEqual(db._options.defaultCacheTTL, 3600, 'default cache TTL defaulted to expected value');
+            a.strictEqual(db._options.defaultCacheTTL, 60, 'default cache TTL defaulted to expected value');
         });
         
         QUnit.test('specified options correctly stored', function(a){

@@ -1,6 +1,6 @@
 {
   "name": "@maynoothuniversity/caching-json-databridge",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "A caching data bridge for NodeJS",
   "main": "lib/cjdb.js",
   "scripts": {
@@ -20,13 +20,13 @@
   "homepage": "https://github.com/bbusschots-mu/caching-json-databridge#readme",
   "devDependencies": {
     "@bbusschots/minami-bartificer": "^1.2.3",
-    "jsdoc": "^3.6.4",
+    "jsdoc": "^3.6.6",
     "qunitjs": "^2.4.1",
     "shelljs": "^0.8.4"
   },
   "dependencies": {
     "@maynoothuniversity/validate-params": "^1.2.3",
     "fs-extra": "^9.0.1",
-    "moment": "^2.27.0"
+    "moment": "^2.29.1"
   }
 }
